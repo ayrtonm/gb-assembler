@@ -1,81 +1,76 @@
-//joyp.asm
-
-.non-default destination
-
-.title
+title:
 keypad test
-//0x435553544f4d20524f4d
 
-.start
+start:
 jp 0x0150
 
-.0x0150
+0x0150:
 //load sprite tile data
 ld $hl 0x8002
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
 inc $hl
-ld #hl 0x66
+ld [hl] 0x66
 inc $hl
-ld #hl 0x18
+ld [hl] 0x18
 inc $hl
-ld #hl 0x4a
+ld [hl] 0x4a
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
-ld #hl 0x42
+ld [hl] 0x42
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
-ld #hl 0x66
+ld [hl] 0x66
 inc $hl
-ld #hl 0x18
+ld [hl] 0x18
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 //load sprite tile data
 ld $hl 0x8012
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
 inc $hl
-ld #hl 0x66
+ld [hl] 0x66
 inc $hl
-ld #hl 0x18
+ld [hl] 0x18
 inc $hl
-ld #hl 0x4a
+ld [hl] 0x4a
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
-ld #hl 0x42
+ld [hl] 0x42
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 inc $hl
-ld #hl 0x66
+ld [hl] 0x66
 inc $hl
-ld #hl 0x18
+ld [hl] 0x18
 inc $hl
-ld #hl 0x3c
+ld [hl] 0x3c
 
 //load palette (obp0)
 ld $hl 0xff48
-ld #hl 0x1b
+ld [hl] 0x1b
 
 //disable bkg, win/enable sprites
 ld $hl 0xff40
-ld #hl 0x86
+ld [hl] 0x86
 //select direction keys
 ld $hl 0xff00
-ld #hl 0x20
+ld [hl] 0x20
 
 //set 8x8 sprites
 ld $hl 0xff40
-ld $a #hl
+ld $a [hl]
 //used to clear 3rd bit of [0xff40]
 //ld $b 0xfb
 //and $b
 //used to set 3rd bit of [0xff40]
 ld $b 0x04
 or $b
-ld #hl $a
+ld [hl] $a
 
 //initial sprite x coordinate
 ld $b 0x10
@@ -87,19 +82,19 @@ ld $d 0x10
 ld $e 0x01
 jp 0x1000
 
-.0x1000
+0x1000:
 ld $hl 0xfe00
 //set sprite's y coordinate
-ld #hl $d
+ld [hl] $d
 inc $hl
 //set sprite's x coordinate
-ld #hl $b
+ld [hl] $b
 
 //see if right button is pushed down
 ld $hl 0xff00
-ld #hl 0x20
+ld [hl] 0x20
 ld $a 0x01
-and #hl
+and [hl]
 jpnz 0x2000
 ld $a 0x00
 add $b
@@ -108,12 +103,12 @@ ld $b $a
 call 0x4000
 jp 0x2000
 
-.0x2000
+0x2000:
 //see if B button is pushed down
 ld $hl 0xff00
-ld #hl 0x10
+ld [hl] 0x10
 ld $a 0x02
-and #hl
+and [hl]
 jpnz 0x1000
 ld $a 0x00
 add $d
@@ -129,17 +124,17 @@ jp 0x1000
 //a better way to implement wait would be to use a register as a counter for a loop
 //that way the maximum time delay won't be limited by memory or maximum call stack (if there is one?)
 //1000 nops is approx 250us delay
-.0x4000
+0x4000:
 nop
-.0x5000
+0x5000:
 ret
 
-.0x0000
+///0x0000:
 //ld $hl 0xff44
-//ld $a #hl
+//ld $a [hl]
 //ld $b 0x91
 //cp $b
 //jpnz 0x0000
 //ld $hl 0xff40
-//ld #hl 0x06
+//ld [hl] 0x06
 //ret

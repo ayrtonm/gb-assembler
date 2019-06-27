@@ -10,6 +10,7 @@ import (
   "encoding/binary"
 )
 
+//may need to clean up these error codes
 /*error code explanations
   1 - main program missing arguments
   2 - called parseHex on argument without hex prefix
@@ -18,8 +19,9 @@ import (
   5 - instruction missing arguments
   6 - argument to opcode is not a valid reset vector
   7 - opcode function called with invalid instruction
-  8 - argument to opcode is an invalid two-character register
-  9 - argument to opcode is an invalid one-character register
+  8 - argument to opcode is an invalid two-character register, currently unused
+  9 - argument to opcode is an invalid one-character register, currently unused
+  10 - error in arguments to load instruction, for temporary use
 */
 
 type section int
@@ -139,6 +141,7 @@ func getSectionType(line string) section {
 
 func parseHex(input string, numChars int) []byte {
   if !isHex(input) {
+    fmt.Println("failed to parse:", input)
     os.Exit(2)
   }
   output := make([]byte, numChars)
@@ -177,14 +180,17 @@ func readTitle(line string) []byte {
 
 func getNextline(rd *bufio.Reader) (line string, more bool) {
   line, err := rd.ReadString('\n')
-  if len(line) == 0 && err != nil {
-    if err == io.EOF {
+  line = strings.TrimSuffix(line, "\n")
+  if err != nil {
+    if len(line) == 0 && err == io.EOF {
       return "", false 
     }
   } else if getSectionType(line) == comment {
     return getNextline(rd)
+  } else if getSectionType(line) == blank {
+    return getNextline(rd)
   }
-  return strings.TrimSuffix(line, "\n"), true
+  return line, true
 }
 
 //functions used to write opcodes
@@ -348,6 +354,54 @@ func jumpCall(dest string, instruction string) (output []byte) {
   return output
 }
 
+func load(dest string, data string) (output []byte) {
+  if isReg(dest) && isReg(data) {
+    destReg := stripReg(dest)
+    dataReg := stripReg(data)
+    output = append(output, 0x40 + (regOffsets2[destReg] * 0x08) + regOffsets2[dataReg])
+
+  } else if isReg(dest) && isPtr(data) {
+    destReg := stripReg(dest)
+    dataPtr := stripPtr(data)
+    if dataPtr != "hl" {
+      os.Exit(4)
+    }
+    output = append(output, 0x46 + (regOffsets2[destReg] * 0x08))
+
+  } else if isPtr(dest) && isReg(data) {
+    destPtr := stripPtr(dest)
+    dataReg := stripReg(data)
+    if destPtr != "hl" {
+      os.Exit(4)
+    }
+    output = append(output, 0x70 + regOffsets2[dataReg])
+
+  } else if isReg(dest) && isHex(data) {
+    destReg := stripReg(dest)
+    if regLength(dest) == 1 {
+      output = append(output, 0x06 + (regOffsets2[destReg] * 0x08), parseByte(data))
+    } else if regLength(dest) == 2 {
+      dataAddress := parseWord(data)
+      output = append(output, 0x01 + (regOffsets1[destReg] * 0x10), lowByte(dataAddress), hiByte(dataAddress))
+    } else {
+      os.Exit(4)
+    }
+
+  } else if isPtr(dest) && isHex(data) {
+    destPtr := stripPtr(dest)
+    if destPtr != "hl" {
+      os.Exit(4)
+    } else {
+      output = append(output, 0x36, parseByte(data))
+    }
+
+  } else {
+    fmt.Println("failed to parse: ld", dest, data)
+    os.Exit(10)
+  }
+  return output
+}
+
 func readCode(line string) (byteCode []byte) {
   output := make([]byte,0)
   cmd := strings.Fields(line)
@@ -435,15 +489,9 @@ func readCode(line string) (byteCode []byte) {
           data := cmd[2]
           switch instruction {
             case "ld":
-              if isReg(dest) && isReg(data) {
-                destReg := dest[len(regPrefix):]
-                dataReg := data[len(regPrefix):]
-                output = append(output, 0x40 + (regOffsets2[destReg] * 0x08) + regOffsets2[dataReg])
-              } else {
-                output = append(output , 0xff, 0xfe)
-              }
+            output = append(output, load(dest, data)...)
             default:
-              output = append(output , 0xff, 0xfe)
+              output = append(output , 0xff)
           }
       }
   }
@@ -456,16 +504,17 @@ func writeCode(file *os.File, data []byte) {
   //fmt.Println(bytesWritten)
 }
 
-func readSection(outfile *os.File, rd *bufio.Reader) bool {
-  for line, more := getNextline(rd); getSectionType(line) == srcCode; line, more = getNextline(rd) {
+func readSection(outfile *os.File, rd *bufio.Reader) (line string, more bool) {
+  line, more = getNextline(rd)
+  for ; getSectionType(line) == srcCode; line, more = getNextline(rd) {
     byteCode := readCode(line)
     writeCode(outfile, byteCode)
     updatePc(pc + uint16(len(byteCode)), outfile)
     if !more {
-      return false
+      return "", more
     }
   }
-  return true
+  return line, more
 }
 
 func main() {
@@ -482,22 +531,23 @@ func main() {
   defer outfile.Close()
 
   rd := bufio.NewReader(infile)
+  line, more := getNextline(rd)
   for {
-    line, more := getNextline(rd)
     switch getSectionType(line) {
       case title:
         line, more = getNextline(rd)
         outfile.Seek(int64(titleAddress), 0)
         writeCode(outfile, readTitle(line))
+        line, more = getNextline(rd)
       case start:
         updatePc(startAddress, outfile)
-        readSection(outfile, rd)
+        line, more = readSection(outfile, rd)
       case address:
         updatePc(parseWord(line), outfile)
-        readSection(outfile, rd)
+        line, more = readSection(outfile, rd)
       case label:
         labels[strings.TrimSuffix(line, labelSuffix)] = pc
-        readSection(outfile, rd)
+        line, more = readSection(outfile, rd)
     }
     if !more {
       break
