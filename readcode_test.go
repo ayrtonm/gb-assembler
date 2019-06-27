@@ -23,12 +23,12 @@ var testInc = []string {
   "inc $bc",
   "inc $de",
   "inc $hl",
-  "inc $af"}
+  "inc $sp"}
 var testDec = []string {
   "dec $bc",
   "dec $de",
   "dec $hl",
-  "dec $af"}
+  "dec $sp"}
 var testMap = map[string][]string{
   "jp":testJp,
   "push":testPush,

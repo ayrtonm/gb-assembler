@@ -10,6 +10,18 @@ import (
   "encoding/binary"
 )
 
+/*error code explanations
+  1 - main program missing arguments
+  2 - called parseHex on argument without hex prefix
+  3 - argument to opcode is not a register or pointer
+  4 - argument to opcode is not a valid register (more than two characters)
+  5 - instruction missing arguments
+  6 - argument to opcode is not a valid reset vector
+  7 - opcode function called with invalid instruction
+  8 - argument to opcode is an invalid two-character register
+  9 - argument to opcode is an invalid one-character register
+*/
+
 type section int
 
 const (
@@ -92,6 +104,18 @@ func isAddress(line string) bool {
   return isHex(line) && isLabel(line)
 }
 
+func regLength(dest string) int {
+  return len(dest)-len(regPrefix)
+}
+
+func stripReg(dest string) string {
+  return dest[len(regPrefix):]
+}
+
+func stripPtr(dest string) string {
+  return dest[len(ptrPrefix):len(dest)-len(ptrSuffix)]
+}
+
 func getSectionType(line string) section {
   switch line {
     case "":
@@ -163,6 +187,167 @@ func getNextline(rd *bufio.Reader) (line string, more bool) {
   return strings.TrimSuffix(line, "\n"), true
 }
 
+//functions used to write opcodes
+//increment and decrement
+func incDec(dest string, instruction string) (output byte) {
+  if isReg(dest) {
+    reg := stripReg(dest)
+    if regLength(dest) == 2 {
+      if instruction == "inc" {
+        //two byte register increment
+        output = 0x03 + (regOffsets1[reg] * 0x10)
+      } else if instruction == "dec" {
+        //two byte register decrement
+        output = 0x0b + (regOffsets1[reg] * 0x10)
+      } else {
+        os.Exit(7)
+      }
+    } else if regLength(dest) == 1 {
+      if instruction == "inc" {
+        //one byte register increment
+        output = 0x04 + (regOffsets2[reg] * 0x08)
+      } else if instruction == "dec" {
+        //one byte register decrement
+        output = 0x05 + (regOffsets2[reg] * 0x08)
+      } else {
+        os.Exit(7)
+      }
+    } else {
+      //reg is not a valid register
+      os.Exit(4)
+    }
+  } else if isPtr(dest) {
+    reg := stripPtr(dest)
+    if reg != "hl" {
+      os.Exit(4)
+    }
+    if instruction == "inc" {
+      //increment address in hl
+      output = 0x34
+    } else if instruction == "dec" {
+      //decrement address in hl
+      output = 0x35
+    } else {
+      os.Exit(7)
+    }
+  } else {
+    os.Exit(3)
+  }
+  return output
+}
+//arithmetic
+func arithmetic(dest string, instruction string) (output byte) {
+  if isReg(dest) {
+    reg := stripReg(dest)
+    if regLength(dest) == 1 {
+      var base byte
+      if instruction == "add" {
+        base = 0x80
+      } else if instruction == "adc" {
+        base = 0x88
+      } else if instruction == "sub" {
+        base = 0x90
+      } else if instruction == "sbc" {
+        base = 0x98
+      } else if instruction == "and" {
+        base = 0xa0
+      } else if instruction == "xor" {
+        base = 0xa8
+      } else if instruction == "or" {
+        base = 0xb0
+      } else if instruction == "cp" {
+        base = 0xb8
+      } else {
+        os.Exit(7)
+      }
+      output = base + regOffsets2[reg]
+    } else {
+      //reg is not a valid register
+      os.Exit(4)
+    }
+  } else if isPtr(dest) {
+    reg := stripPtr(dest)
+    if reg != "hl" {
+      //reg is not a valid register
+      os.Exit(4)
+    }
+    if instruction == "add" {
+      output = 0x86
+    } else if instruction == "adc" {
+      output = 0x8e
+    } else if instruction == "sub" {
+      output = 0x96
+    } else if instruction == "sbc" {
+      output = 0x9e
+    } else if instruction == "and" {
+      output = 0xa6
+    } else if instruction == "xor" {
+      output = 0xae
+    } else if instruction == "or" {
+      output = 0xb6
+    } else if instruction == "cp" {
+      output = 0xbe
+    } else {
+      os.Exit(7)
+    }
+  } else {
+    //argument to add is not a register or pointer
+    os.Exit(3)
+  }
+  return output
+}
+
+//push and pop
+func pushPop(dest string, instruction string) (output byte) {
+  if isReg(dest) {
+    reg := stripReg(dest)
+    var base byte
+    if instruction == "push" {
+      base = 0xc5
+    } else if instruction == "pop" {
+      base = 0xc1
+    } else {
+      os.Exit(7)
+    }
+    output = base + (regOffsets3[reg] * 0x10)
+  } else {
+    //argument to increment is not a register or pointer
+    os.Exit(3)
+  }
+  return output
+}
+
+//jumps and calls
+func jumpCall(dest string, instruction string) (output []byte) {
+  output = make([]byte,0)
+  if instruction == "jp" {
+    output = append(output, 0xc3)
+  } else if instruction == "jpz" {
+    output = append(output, 0xca)
+  } else if instruction == "jpnz" {
+    output = append(output, 0xc2)
+  } else if instruction == "jpc" {
+    output = append(output, 0xda)
+  } else if instruction == "jpnc" {
+    output = append(output, 0xd2)
+  } else if instruction == "call" {
+    output = append(output, 0xcd)
+  } else if instruction == "callz" {
+    output = append(output, 0xcc)
+  } else if instruction == "callnz" {
+    output = append(output, 0xc4)
+  } else if instruction == "callc" {
+    output = append(output, 0xdc)
+  } else if instruction == "callnc" {
+    output = append(output, 0xd4)
+  } else {
+    os.Exit(7)
+  }
+  newAddress := parseWord(dest)
+  output = append(output, lowByte(newAddress), hiByte(newAddress))
+  return output
+}
+
 func readCode(line string) (byteCode []byte) {
   output := make([]byte,0)
   cmd := strings.Fields(line)
@@ -192,55 +377,25 @@ func readCode(line string) (byteCode []byte) {
       dest := cmd[1]
       switch instruction {
         case "jp":
-          newAddress := parseWord(dest)
-          output = append(output, 0xc3)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "jp")...)
         case "jpz":
-          newAddress := parseWord(dest)
-          output = append(output, 0xca)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "jpz")...)
         case "jpnz":
-          newAddress := parseWord(dest)
-          output = append(output, 0xc2)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "jpnz")...)
         case "jpc":
-          newAddress := parseWord(dest)
-          output = append(output, 0xda)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "jpc")...)
         case "jpnc":
-          newAddress := parseWord(dest)
-          output = append(output, 0xd2)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "jpnc")...)
         case "call":
-          newAddress := parseWord(dest)
-          output = append(output, 0xcd)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "call")...)
         case "callz":
-          newAddress := parseWord(dest)
-          output = append(output, 0xcc)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "callz")...)
         case "callnz":
-          newAddress := parseWord(dest)
-          output = append(output, 0xc4)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "callnz")...)
         case "callc":
-          newAddress := parseWord(dest)
-          output = append(output, 0xdc)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "callc")...)
         case "callnc":
-          newAddress := parseWord(dest)
-          output = append(output, 0xd4)
-          output = append(output, lowByte(newAddress))
-          output = append(output, hiByte(newAddress))
+          output = append(output, jumpCall(dest, "callnc")...)
         case "rst":
           newAddress := parseByte(dest)
           if !isValidRst(newAddress) {
@@ -249,65 +404,29 @@ func readCode(line string) (byteCode []byte) {
           }
           output = append(output, 0xc7 + newAddress)
         case "push":
-          if isReg(dest) {
-            reg := dest[len(regPrefix):]
-            output = append(output, 0xc5 + (regOffsets3[reg] * 0x10))
-          } else {
-            //argument to increment is not a register or pointer
-            os.Exit(3)
-          }
+          output = append(output, pushPop(dest, "push"))
         case "pop":
-          if isReg(dest) {
-            reg := dest[len(regPrefix):]
-            output = append(output, 0xc1 + (regOffsets3[reg] * 0x10))
-          } else {
-            //argument to increment is not a register or pointer
-            os.Exit(3)
-          }
+          output = append(output, pushPop(dest, "pop"))
         case "inc":
-          if isReg(dest) {
-            reg := dest[len(regPrefix):]
-            if len(dest)-len(regPrefix) == 2 {
-              output = append(output, 0x03 + (regOffsets1[reg] * 0x10))
-            } else if len(dest)-len(regPrefix) == 1 {
-              output = append(output, 0x04 + (regOffsets2[reg] * 0x08))
-            } else {
-              //reg is not a valid register
-              os.Exit(4)
-            }
-          } else if isPtr(dest) {
-            reg := dest[len(ptrPrefix):len(dest)-len(ptrSuffix)]
-            if reg != "hl" {
-              //reg is not a valid register
-              os.Exit(4)
-            }
-            output = append(output, 0x34)
-          } else {
-            //argument to increment is not a register or pointer
-            os.Exit(3)
-          }
+          output = append(output, incDec(dest, "inc"))
         case "dec":
-          if isReg(dest) {
-            reg := dest[len(regPrefix):]
-            if len(dest)-len(regPrefix) == 2 {
-              output = append(output, 0x0b + (regOffsets1[reg] * 0x10))
-            } else if len(dest)-len(regPrefix) == 1 {
-              output = append(output, 0x05 + (regOffsets2[reg] * 0x08))
-            } else {
-              //reg is not a valid register
-              os.Exit(4)
-            }
-            output = append(output, 0x35)
-          } else if isPtr(dest) {
-            reg := dest[len(ptrPrefix):len(dest)-len(ptrSuffix)]
-            if reg != "hl" {
-              //reg is not a valid register
-              os.Exit(4)
-            }
-          } else {
-            //argument to increment is not a register or pointer
-            os.Exit(3)
-          }
+          output = append(output, incDec(dest, "dec"))
+        case "add":
+          output = append(output, arithmetic(dest, "add"))
+        case "adc":
+          output = append(output, arithmetic(dest, "adc"))
+        case "sub":
+          output = append(output, arithmetic(dest, "sub"))
+        case "sbc":
+          output = append(output, arithmetic(dest, "sbc"))
+        case "and":
+          output = append(output, arithmetic(dest, "and"))
+        case "xor":
+          output = append(output, arithmetic(dest, "xor"))
+        case "or":
+          output = append(output, arithmetic(dest, "or"))
+        case "cp":
+          output = append(output, arithmetic(dest, "cp"))
         //instruction not found, read second argument the switch case with two-argument instructions
         default:
           if len(cmd) < 2 {
@@ -387,6 +506,7 @@ func main() {
   outfile.Seek(int64(logoAddress), 0)
   _, err = outfile.Write(nintendoLogo)
 
+  //compute checksum and write to header
   outfile.Seek(int64(titleAddress), 0)
   checksum := []byte{0}
   temp := []byte{0}
