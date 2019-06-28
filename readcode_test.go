@@ -5,6 +5,16 @@ import (
   "fmt"
 )
 
+var testLd = []string{
+  "ld $b $b",
+  "ld $b $c",
+  "ld $b $d",
+  "ld $b $e",
+  "ld $b $h",
+  "ld $b $l",
+  "ld $b [hl]",
+  "ld $b $a",
+}
 var testJp = []string{
   "ld [hl] 0x3c",
   "jp 0x0100",
@@ -31,12 +41,14 @@ var testDec = []string {
   "dec $hl",
   "dec $sp"}
 var testMap = map[string][]string{
+  "ld":testLd,
   "jp":testJp,
   "push":testPush,
   "pop":testPop,
   "inc":testInc,
   "dec":testDec}
 var allTests = []string{
+  "ld",
   "jp",
   "push",
   "pop",
@@ -64,7 +76,7 @@ func TestReadCode(t *testing.T) {
         if bytes[0] & 0x0F != 0x0b {
           t.Errorf(i+" wrote %x want xb",bytes)
         }
-    } else if testName == "jp" {
+    } else if testName == "jp" || testName == "ld" {
       fmt.Printf("%x\n",bytes)
     }
     }
