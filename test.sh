@@ -1,6 +1,6 @@
-go test -run ''
-for i in src/*;
-  do inputfile=${i#src/};
-  go run assembler.go $i bin/${inputfile%.asm}.gb;
-  hexdump -C bin/${inputfile%.asm}.gb > dumps/${inputfile%.asm}.hex;
+#go test -run ''
+for i in src_z80/*;
+  do inputfile=${i#src_z80/};
+  go run src/* $i bin_z80/${inputfile%.asm}.gb;
+  hexdump -C bin_z80/${inputfile%.asm}.gb > dumps_z80/${inputfile%.asm}.hex;
 done
