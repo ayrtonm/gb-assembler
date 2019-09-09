@@ -1,4 +1,6 @@
-#go test -run ''
+cd src/
+go test -run ''
+cd ..
 for i in src_z80/*;
   do inputfile=${i#src_z80/};
   go run src/* $i bin_z80/${inputfile%.asm}.gb;
