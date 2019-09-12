@@ -74,7 +74,7 @@ func main() {
         updatePc(parseWord(line), outfile)
         line, more = readSection(outfile, rd)
       case label:
-        labels[strings.TrimSuffix(line, labelSuffix)] = pc
+        labels[stripLabel(line)] = pc
         line, more = readSection(outfile, rd)
     }
     if !more {

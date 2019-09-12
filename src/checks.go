@@ -4,6 +4,13 @@ import (
   "strings"
 )
 
+const commentPrefix string = "//"
+const labelSuffix string = ":"
+const hexPrefix string = "0x"
+const regPrefix string = "$"
+const ptrPrefix string = "["
+const ptrSuffix string = "]"
+
 func isValidRst(rstVector uint8) bool {
   return (rstVector & 0xc7) == 0
 }
