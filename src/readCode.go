@@ -25,9 +25,15 @@ func readCode(line string) (byteCode []byte) {
       output = append(output, 0xc9)
     case "retz":
       output = append(output, 0xc8)
+    case "retc":
+      output = append(output, 0xd8)
+    case "retnz":
+      output = append(output, 0xc0)
+    case "retnc":
+      output = append(output, 0xd0)
     //if instruction not found, read one argument then switch case with one-argument instructions
     default:
-      if len(cmd) < 1 {
+      if len(cmd) < 2 {
         //instructions missing arguments
         os.Exit(5)
       }

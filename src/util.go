@@ -2,6 +2,7 @@ package main
 
 import (
   "os"
+  "strings"
 )
 
 //may need to clean up these error codes
@@ -30,12 +31,6 @@ const (
   blank
 )
 
-const commentPrefix string = "//"
-const labelSuffix string = ":"
-const hexPrefix string = "0x"
-const regPrefix string = "$"
-const ptrPrefix string = "["
-const ptrSuffix string = "]"
 const numTitleChars int = 16
 const titleAddress uint16 = 0x134
 const startAddress uint16 = 0x0100
@@ -80,6 +75,10 @@ func stripReg(dest string) string {
 
 func stripPtr(dest string) string {
   return dest[len(ptrPrefix):len(dest)-len(ptrSuffix)]
+}
+
+func stripLabel(dest string) string {
+  return strings.TrimSuffix(dest, labelSuffix)
 }
 
 func getSectionType(line string) section {

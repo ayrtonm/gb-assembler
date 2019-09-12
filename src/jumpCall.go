@@ -2,6 +2,7 @@ package main
 
 import(
   "os"
+  "fmt"
 )
 
 //jumps and calls
@@ -30,7 +31,16 @@ func jumpCall(dest string, instruction string) (output []byte) {
   } else {
     os.Exit(7)
   }
-  newAddress := parseWord(dest)
+  var newAddress uint16
+  var found bool
+  if isHex(dest) {
+    newAddress = parseWord(dest)
+  } else {
+    newAddress, found = labels[dest]
+    if !found {
+      fmt.Println("warning: using unassigned label:", dest)
+    }
+  }
   output = append(output, lowByte(newAddress), hiByte(newAddress))
   return output
 }
