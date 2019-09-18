@@ -150,7 +150,7 @@ func getSectionType(line string, e error) section {
 func getLine(rd *bufio.Reader) (line string, e error) {
   line, err := rd.ReadString('\n')
   line = strings.TrimSuffix(line, "\n")
-  return line, err
+  return strings.ToLower(line), err
 }
 
 func regLength(line string) int {
@@ -235,6 +235,10 @@ func bailout(code int) {
       fmt.Println("load(dest, data) failed in case 5")
     case 16:
       fmt.Println("load(dest, data) failed in default case")
+    case 17:
+      fmt.Println("called pushPop(dest, instruction) with invalid dest")
+    case 18:
+      fmt.Println("called pushPop(dest, instruction) with invalid instruction")
   }
   fmt.Println("bailing out")
   os.Exit(code)

@@ -1,9 +1,5 @@
 package main
 
-import(
-  "os"
-)
-
 //push and pop
 func pushPop(dest string, instruction string) (output byte) {
   if isReg(dest) {
@@ -14,12 +10,17 @@ func pushPop(dest string, instruction string) (output byte) {
     } else if instruction == "pop" {
       base = 0xc1
     } else {
-      os.Exit(7)
+      bailout(18)
     }
-    output = base + (regOffsets3[reg] * 0x10)
+    regOffset, found := regOffsets3[reg]
+    if found {
+      output = base + (regOffset * 0x10)
+    } else {
+      bailout(17)
+    }
   } else {
     //argument to increment is not a register or pointer
-    os.Exit(3)
+    bailout(17)
   }
   return output
 }
