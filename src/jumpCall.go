@@ -1,10 +1,5 @@
 package main
 
-import(
-  "os"
-  "fmt"
-)
-
 //jumps and calls
 func jumpCall(dest string, instruction string) (output []byte) {
   output = make([]byte,0)
@@ -29,16 +24,16 @@ func jumpCall(dest string, instruction string) (output []byte) {
   } else if instruction == "callnc" {
     output = append(output, 0xd4)
   } else {
-    os.Exit(7)
+    bailout(8)
   }
   var newAddress uint16
   var found bool
-  if isHex(dest) {
-    newAddress = parseWord(dest)
+  if isNum(dest) {
+    newAddress = getUint16(dest)
   } else {
     newAddress, found = labels[dest]
     if !found {
-      fmt.Println("warning: using unassigned label:", dest)
+      unassignedLabels[pc] = dest
     }
   }
   output = append(output, lowByte(newAddress), hiByte(newAddress))

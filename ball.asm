@@ -1,10 +1,81 @@
 title:
-keypad test
+moving ball
 
 start:
-jp 0x0150
+jp setup
 
 0x0150:
+wait:
+ld $h 0xff
+ld $l 0xff
+ld $a 0xff
+wait_loop_1:
+dec $h
+nop
+jpnz wait_loop_1
+wait_loop_2:
+ld $h 0xff
+dec $l
+nop
+jpnz wait_loop_2
+ret
+
+check_b:
+//see if B button is pushed down
+ld $hl 0xff00
+ld [hl] 0x10
+ld $a 0x02
+and [hl]
+//return if it's not pressed
+retnz
+//otherwise increment ball position if it is pressed
+ld $a $d
+add $e
+ld $d $a
+ld $h 0x99
+sbc $h
+retnz
+ld $d 0x00
+ret
+
+check_right:
+//see if right button is pushed down
+ld $hl 0xff00
+ld [hl] 0x20
+ld $a 0x01
+and [hl]
+//return if it's not pressed
+retnz
+//otherwise increment ball position if it is pressed
+ld $a $b
+add $c
+ld $b $a
+ld $h 0xa9
+sbc $h
+retnz
+ld $b 0x00
+ret
+
+update_ball:
+ld $hl 0xfe00
+//set sprite's y coordinate
+ld [hl] $d
+inc $hl
+//set sprite's x coordinate
+ld [hl] $b
+ret
+
+main:
+call wait
+call wait
+call wait
+call wait
+call update_ball
+call check_right
+call check_b
+jp main
+
+setup:
 //load sprite tile data
 ld $hl 0x8002
 ld [hl] 0x3c
@@ -80,61 +151,4 @@ ld $c 0x01
 ld $d 0x10
 //increment y coordinate by $e if B button is not pressed
 ld $e 0x01
-jp 0x1000
-
-0x1000:
-ld $hl 0xfe00
-//set sprite's y coordinate
-ld [hl] $d
-inc $hl
-//set sprite's x coordinate
-ld [hl] $b
-
-//see if right button is pushed down
-ld $hl 0xff00
-ld [hl] 0x20
-ld $a 0x01
-and [hl]
-jpnz 0x2000
-ld $a 0x00
-add $b
-add $c
-ld $b $a
-call 0x4000
-jp 0x2000
-
-0x2000:
-//see if B button is pushed down
-ld $hl 0xff00
-ld [hl] 0x10
-ld $a 0x02
-and [hl]
-jpnz 0x1000
-ld $a 0x00
-add $d
-add $e
-ld $d $a
-call 0x4000
-
-jp 0x1000
-
-//calling 0x2000 is a very rudimentary wait function
-//this works by running nop until the return statement below is executed
-//explicitly writing 0x00 to 0x2000 for clarity 
-//a better way to implement wait would be to use a register as a counter for a loop
-//that way the maximum time delay won't be limited by memory or maximum call stack (if there is one?)
-//1000 nops is approx 250us delay
-0x4000:
-nop
-0x5000:
-ret
-
-///0x0000:
-//ld $hl 0xff44
-//ld $a [hl]
-//ld $b 0x91
-//cp $b
-//jpnz 0x0000
-//ld $hl 0xff40
-//ld [hl] 0x06
-//ret
+jp main

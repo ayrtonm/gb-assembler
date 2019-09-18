@@ -1,56 +1,70 @@
 package main
 
-import(
-  "os"
-  "fmt"
-)
-
 func load(dest string, data string) (output []byte) {
   switch {
     case isReg(dest) && isReg(data):
-      destReg := stripReg(dest)
-      dataReg := stripReg(data)
-      output = append(output, 0x40 + (regOffsets2[destReg] * 0x08) + regOffsets2[dataReg])
+      destReg := getReg(dest)
+      dataReg := getReg(data)
+      destOffset,foundDest := regOffsets2[destReg]
+      dataOffset,foundData := regOffsets2[dataReg]
+      if foundDest && foundData {
+        output = append(output, 0x40 + (destOffset * 0x08) + dataOffset)
+      } else {
+        bailout(9)
+      }
 
     case isReg(dest) && isPtr(data):
-      destReg := stripReg(dest)
-      dataPtr := stripPtr(data)
-      if dataPtr != "hl" {
-        os.Exit(4)
+      destReg := getReg(dest)
+      dataPtr := getPtr(data)
+      destOffset,foundDest := regOffsets2[destReg]
+      if dataPtr == "hl" && foundDest {
+        output = append(output, 0x46 + (destOffset * 0x08))
+      } else {
+        bailout(10)
       }
-      output = append(output, 0x46 + (regOffsets2[destReg] * 0x08))
 
     case isPtr(dest) && isReg(data):
-      destPtr := stripPtr(dest)
-      dataReg := stripReg(data)
-      if destPtr != "hl" {
-        os.Exit(4)
+      destPtr := getPtr(dest)
+      dataReg := getReg(data)
+      dataOffset,foundData := regOffsets2[dataReg]
+      if destPtr  == "hl" && foundData {
+        output = append(output, 0x70 + dataOffset)
+      } else {
+        bailout(11)
       }
-      output = append(output, 0x70 + regOffsets2[dataReg])
 
     case isReg(dest) && isHex(data):
-      destReg := stripReg(dest)
+      destReg := getReg(dest)
       switch regLength(dest) {
         case 1:
-          output = append(output, 0x06 + (regOffsets2[destReg] * 0x08), parseByte(data))
+          destOffset, foundDest := regOffsets2[destReg]
+          if foundDest {
+            output = append(output, 0x06 + (destOffset * 0x08), getUint8(data))
+          } else {
+            bailout(12)
+          }
         case 2:
-          dataAddress := parseWord(data)
-          output = append(output, 0x01 + (regOffsets1[destReg] * 0x10), lowByte(dataAddress), hiByte(dataAddress))
+          dataAddress := getUint16(data)
+          destOffset, foundDest := regOffsets1[destReg]
+          if foundDest {
+            output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))
+          } else {
+            bailout(13)
+          }
         default:
-          os.Exit(4)
+          bailout(14)
       }
 
     case isPtr(dest) && isHex(data):
-      destPtr := stripPtr(dest)
+      destPtr := getPtr(dest)
       if destPtr != "hl" {
-        os.Exit(4)
+        bailout(15)
       } else {
-        output = append(output, 0x36, parseByte(data))
+        output = append(output, 0x36, getUint8(data))
       }
 
     default:
-      fmt.Println("failed to parse: ld", dest, data)
-      os.Exit(10)
+      bailout(16)
   }
   return output
 }

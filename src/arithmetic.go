@@ -1,14 +1,11 @@
 package main
 
-import(
-  "os"
-)
-
 //arithmetic
 func arithmetic(dest string, instruction string) (output byte) {
   if isReg(dest) {
-    reg := stripReg(dest)
-    if regLength(dest) == 1 {
+    reg := getReg(dest)
+    offset, found := regOffsets2[reg]
+    if found {
       var base byte
       if instruction == "add" {
         base = 0x80
@@ -27,18 +24,18 @@ func arithmetic(dest string, instruction string) (output byte) {
       } else if instruction == "cp" {
         base = 0xb8
       } else {
-        os.Exit(7)
+        bailout(5)
       }
-      output = base + regOffsets2[reg]
+      output = base + offset
     } else {
       //reg is not a valid register
-      os.Exit(4)
+      bailout(4)
     }
   } else if isPtr(dest) {
-    reg := stripPtr(dest)
+    reg := getPtr(dest)
     if reg != "hl" {
       //reg is not a valid register
-      os.Exit(4)
+      bailout(4)
     }
     if instruction == "add" {
       output = 0x86
@@ -57,11 +54,11 @@ func arithmetic(dest string, instruction string) (output byte) {
     } else if instruction == "cp" {
       output = 0xbe
     } else {
-      os.Exit(7)
+      bailout(5)
     }
   } else {
     //argument to add is not a register or pointer
-    os.Exit(3)
+    bailout(4)
   }
   return output
 }

@@ -5,6 +5,7 @@ import(
   "strings"
 )
 
+//take a line of assembly and turn it into a sequence of bytes
 func readCode(line string) (byteCode []byte) {
   output := make([]byte,0)
   cmd := strings.Fields(line)
@@ -60,7 +61,7 @@ func readCode(line string) (byteCode []byte) {
         case "callnc":
           output = append(output, jumpCall(dest, "callnc")...)
         case "rst":
-          newAddress := parseByte(dest)
+          newAddress := getUint8(dest)
           if !isValidRst(newAddress) {
             //reset vector is not valid
             os.Exit(6)

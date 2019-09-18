@@ -7,7 +7,7 @@ import(
 //push and pop
 func pushPop(dest string, instruction string) (output byte) {
   if isReg(dest) {
-    reg := stripReg(dest)
+    reg := getReg(dest)
     var base byte
     if instruction == "push" {
       base = 0xc5
