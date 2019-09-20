@@ -20,11 +20,27 @@ wait:
       jpnz wait_loop_2
       ret
 
-check_b:
-  //check if B is pressed
+check_up:
+  //check if up is pressed
   ld $hl 0xff00
-  ld [hl] 0x10
-  ld $a 0x02
+  ld [hl] 0x20
+  ld $a 0x04
+  and [hl]
+  //return if it's not pressed
+  retnz
+  //if it's pressed, decrement ball position
+  ld $a $d
+  sub $e
+  ld $d $a
+  retnz
+  ld $d 0x99
+  ret
+
+check_down:
+  //check if down is pressed
+  ld $hl 0xff00
+  ld [hl] 0x20
+  ld $a 0x08
   and [hl]
   //return if it's not pressed
   retnz
@@ -55,6 +71,21 @@ check_right:
   ld $b 0x00
   ret
 
+check_left:
+  ld $hl 0xff00
+  ld [hl] 0x20
+  ld $a 0x02
+  and [hl]
+  //return if it's not pressed
+  retnz
+  //if it's pressed, increment ball position
+  ld $a $b
+  sub $c
+  ld $b $a
+  retnz
+  ld $b 0xa9
+  ret
+
 update_ball:
   ld $hl 0xfe00
   //set ball's y-coordinate
@@ -67,11 +98,11 @@ update_ball:
 main:
   call wait
   call wait
-  call wait
-  call wait
   call update_ball
   call check_right
-  call check_b
+  call check_left
+  call check_down
+  call check_up
   jp main
 
 setup:
