@@ -7,6 +7,7 @@ import(
 
 const startAddress uint16 = 0x0100
 const titleAddress uint16 = 0x0134
+const checksumAddress uint16 = 0x014D
 const numTitleChars int = 16
 
 var pc uint16 = startAddress
@@ -86,6 +87,17 @@ func main() {
     outfile.Seek(int64(addr + 1), 0)
     writeCode(outfile, uint16ToSlice(assignedAddr))
   }
+  //compute checksum and write to header
+  outfile.Seek(int64(titleAddress),0)
+  checksum := []byte{0}
+  temp := []byte{0}
+  for i := titleAddress; i < checksumAddress; i++ {
+    outfile.Read(temp)
+    checksum[0] -= (1 + temp[0])
+  }
+  outfile.Seek(int64(checksumAddress),0)
+  writeCode(outfile, checksum)
+
   outfile.Seek(0,2)
   var fill []byte = make([]byte,0x8000)
   writeCode(outfile, fill)

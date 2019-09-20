@@ -150,6 +150,9 @@ func getSectionType(line string, e error) section {
 func getLine(rd *bufio.Reader) (line string, e error) {
   line, err := rd.ReadString('\n')
   line = strings.TrimSuffix(line, "\n")
+  for line != strings.TrimPrefix(line, " ") {
+    line = strings.TrimPrefix(line, " ")
+  }
   return strings.ToLower(line), err
 }
 
