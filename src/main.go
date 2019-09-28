@@ -34,6 +34,7 @@ func main() {
   line, err := getLine(rd)
   labels["start"] = startAddress
   var stop bool = false
+  var dataDirective = false
   for {
     switch getSectionType(line, err) {
       case title:
@@ -41,22 +42,26 @@ func main() {
         line, err = getLine(rd)
         updateAddress(titleAddress, outfile)
         writeCode(outfile, titleToSlice(line))
+        dataDirective = false;
         line, err = getLine(rd)
       case start:
         //move pc to startAddress and continue
         updateAddress(startAddress, outfile)
+        dataDirective = false;
         line, err = getLine(rd)
       case address:
         //move pc to address and continue
         updateAddress(getUint16(getLabel(line)), outfile)
+        dataDirective = false;
         line, err = getLine(rd)
       case label:
         //make a label at the current pc and continue
         labels[getLabel(line)] = pc
+        dataDirective = false;
         line, err = getLine(rd)
       case data:
-        //how do I handle this?
-        stop = true
+        dataDirective = true;
+        line, err = getLine(rd)
       case comment:
         //ignore line and continue
         line, err = getLine(rd)
@@ -64,11 +69,22 @@ func main() {
         //ignore line and continue
         line, err = getLine(rd)
       case code:
-        //insert instruction at current pc and continue
-        byteCode := readCode(line)
-        writeCode(outfile, byteCode)
-        updateAddress(pc + uint16(len(byteCode)), outfile)
-        line, err = getLine(rd)
+        if dataDirective {
+          rawData := dataToSlice(line)
+          if len(rawData) != 0 {
+            writeCode(outfile, rawData)
+            updateAddress(pc + uint16(len(rawData)), outfile)
+            line, err = getLine(rd)
+          } else {
+            dataDirective = false
+          }
+        } else {
+          //insert instruction at current pc and continue
+          byteCode := readCode(line)
+          writeCode(outfile, byteCode)
+          updateAddress(pc + uint16(len(byteCode)), outfile)
+          line, err = getLine(rd)
+        }
       case eof:
         stop = true
     }

@@ -7,6 +7,7 @@ import (
   "strconv"
   "os"
   "bufio"
+  "math"
 )
 
 const hexPrefix string = "0x"
@@ -14,6 +15,8 @@ const directivePrefix string = "."
 const regPrefix string = "$"
 const ptrPrefix string = "["
 const ptrSuffix string = "]"
+const itrSuffix string = "++"
+const itrRevSuffix string = "--"
 const commentPrefix string = "//"
 const labelSuffix string = ":"
 
@@ -96,6 +99,18 @@ func isReg(line string) bool {
 }
 func isPtr(line string) bool {
   return strings.HasPrefix(line, ptrPrefix) && strings.HasSuffix(line, ptrSuffix)
+}
+func isItr(line string) bool {
+  return strings.HasSuffix(line, itrSuffix)
+}
+func isItrRev(line string) bool {
+  return strings.HasSuffix(line, itrRevSuffix)
+}
+func isItrPtr(line string) bool {
+  return isPtr(line) && isItr(getPtr(line))
+}
+func isItrRevPtr(line string) bool {
+  return isPtr(line) && isItrRev(getPtr(line))
 }
 func isComment(line string) bool {
   return strings.HasPrefix(line, commentPrefix)
@@ -195,6 +210,26 @@ func uint16ToSlice(data uint16) []byte {
   return output
 }
 
+//only handles hexdecimal numbers for now
+func dataToSlice(line string) []byte {
+  if !isNum(line) {
+    return nil
+  }
+  num := getNum(line)
+  var numBytes int
+  if isHex(line) {
+    numString := getHex(line)
+    numBytes = int(math.Ceil(float64(len(numString))/2.0))
+  } else {
+    return nil
+  }
+  output := make([]byte, numBytes)
+  for i := 0; i < numBytes; i++ {
+    output[i] = uint8((num >> (i * 8)) & 0xFF)
+  }
+  return output
+}
+
 func stringInList(s string, list []string) bool {
   for _,test := range list {
     if s == test {
@@ -242,6 +277,8 @@ func bailout(code int) {
       fmt.Println("called pushPop(dest, instruction) with invalid dest")
     case 18:
       fmt.Println("called pushPop(dest, instruction) with invalid instruction")
+    case 19:
+      fmt.Println("called data directive with invalid data")
   }
   fmt.Println("bailing out")
   os.Exit(code)
