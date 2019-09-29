@@ -25,16 +25,10 @@ main:
   call check_up
   jp main
 
-check_button:
-  ld $hl 0xff00
-  ld [hl] 0x20
-  and [hl]
-  ret
-
 check_up:
   //check if up is pressed
-  ld $a 0x04
-  call check_button
+  ld $a [0xff00]
+  and 0x04
   //return if it's not pressed
   retnz
   //if it's pressed, decrement ball position
@@ -47,8 +41,8 @@ check_up:
 
 check_down:
   //check if down is pressed
-  ld $a 0x08
-  call check_button
+  ld $a [0xff00]
+  and 0x08
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
@@ -64,8 +58,8 @@ check_down:
 
 check_right:
   //check if right is pressed
-  ld $a 0x01
-  call check_button
+  ld $a [0xff00]
+  and 0x01
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
@@ -81,8 +75,8 @@ check_right:
 
 check_left:
   //check if left is pressed
-  ld $a 0x02
-  call check_button
+  ld $a [0xff00]
+  and 0x02
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
@@ -96,11 +90,25 @@ check_left:
 update_ball:
   ld $hl 0xfe00
   //set ball's y-coordinate
-  ld $a $c
-  ld [hl++] $a
+  ld [hl] $c
+  inc $hl
   //set ball's x-coordinate
   ld [hl] $b
   ret
+
+//$hl should point to the first destination address
+//$de should point to the first data source address
+//$a should contain the number of bytes to move
+//this should be pretty easy to implement but what I really want is a way to
+//copy an array of data located immediately after the call to move_data to a
+//given location, but this is not as easy to implement since there's no super
+//obvious way of getting the program counter after jumping to a label
+//also getting opcodes other than jump/call to use labels will be really
+//cumbersome since I still want to handle labels that are used before they are
+//defined
+move_data:
+.data
+  0x3c66184a
 
 setup:
   //load sprite tile data
@@ -161,14 +169,9 @@ setup:
   
   //set 8x8 sprites
   ld $a [0xff40]
-  //ld $hl 0xff40
-  //ld $a [hl]
   //used to clear 3rd bit of [0xff40]
   ld $b 0xfb
   and $b
-  //used to set 3rd bit of [0xff40]
-  //ld $b 0x04
-  //or $b
   ld [0xff40] $a
   
   //initialize sprite coordinates
@@ -176,17 +179,18 @@ setup:
   ld $bc 0x1010
   jp main
 
-wait:
 //dec $hl does not modify any flags... meaning we have to do decrease them
-//individually and do this silly double loop thing 
-  ld $hl 0xffff
-  wait_loop_1:
-    dec $h
-    nop
-    jpnz wait_loop_1
-    wait_loop_2:
-      ld $h 0xff
-      dec $l
-      nop
-      jpnz wait_loop_2
-      ret
+//individually and do this silly relative jump thing
+wait:
+  //the product of the values in $h and $l determine the wait time
+  ld $hl 0x04ff
+  //decrease $h until it's zero
+  dec $l
+  jrnz -3
+  //reload $l and decrease $h by 1
+  //go back to decreasing $l
+  dec $h
+  ld $l 0xff
+  jrnz -8
+  //return when $h is zero
+  ret

@@ -103,6 +103,9 @@ func isDirective(line string) bool {
 func isReg(line string) bool {
   return strings.HasPrefix(line, regPrefix)
 }
+func isRelativeJump(line string) bool {
+  return strings.HasPrefix(line, "jr")
+}
 func isPtr(line string) bool {
   return strings.HasPrefix(line, ptrPrefix) && strings.HasSuffix(line, ptrSuffix)
 }
@@ -304,6 +307,8 @@ func bailout(code int) {
       fmt.Println("called data directive with invalid data")
     case 20:
       fmt.Println("load(dest, data) failed in case with iterable pointer (6-9)")
+    case 21:
+      fmt.Println("instruction not found")
   }
   fmt.Println("bailing out")
   os.Exit(code)

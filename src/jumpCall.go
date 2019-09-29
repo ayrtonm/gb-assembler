@@ -23,20 +23,36 @@ func jumpCall(dest string, instruction string) (output []byte) {
     output = append(output, 0xdc)
   } else if instruction == "callnc" {
     output = append(output, 0xd4)
+  } else if instruction == "jr" {
+    output = append(output, 0x18)
+  } else if instruction == "jrnz" {
+    output = append(output, 0x20)
+  } else if instruction == "jrz" {
+    output = append(output, 0x28)
+  } else if instruction == "jrnc" {
+    output = append(output, 0x30)
+  } else if instruction == "jrc" {
+    output = append(output, 0x38)
   } else {
     bailout(8)
   }
-  var newAddress uint16
-  var found bool
-  if isNum(dest) {
-    newAddress = getUint16(dest)
-  } else {
-    newAddress, found = labels[dest]
-    if !found {
-      unassignedLabels[pc] = dest
+  if isRelativeJump(instruction) {
+    if isNum(dest) {
+      output = append(output, getUint8(dest))
     }
+  } else {
+    var newAddress uint16
+    var found bool
+    if isNum(dest) {
+      newAddress = getUint16(dest)
+    } else {
+      newAddress, found = labels[dest]
+      if !found {
+        unassignedLabels[pc] = dest
+      }
+    }
+    output = append(output, lowByte(newAddress), hiByte(newAddress))
   }
-  output = append(output, lowByte(newAddress), hiByte(newAddress))
   return output
 }
 

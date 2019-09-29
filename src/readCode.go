@@ -36,7 +36,7 @@ func readCode(line string) (byteCode []byte) {
     default:
       if len(cmd) < 2 {
         //instructions missing arguments
-        os.Exit(5)
+        bailout(21)
       }
       dest := cmd[1]
       switch instruction {
@@ -50,6 +50,16 @@ func readCode(line string) (byteCode []byte) {
           output = append(output, jumpCall(dest, "jpc")...)
         case "jpnc":
           output = append(output, jumpCall(dest, "jpnc")...)
+        case "jr":
+          output = append(output, jumpCall(dest, "jr")...)
+        case "jrz":
+          output = append(output, jumpCall(dest, "jrz")...)
+        case "jrnz":
+          output = append(output, jumpCall(dest, "jrnz")...)
+        case "jrc":
+          output = append(output, jumpCall(dest, "jrc")...)
+        case "jrnc":
+          output = append(output, jumpCall(dest, "jrnc")...)
         case "call":
           output = append(output, jumpCall(dest, "call")...)
         case "callz":
@@ -94,14 +104,15 @@ func readCode(line string) (byteCode []byte) {
         //instruction not found, read second argument the switch case with two-argument instructions
         default:
           if len(cmd) < 2 {
-            os.Exit(5)
+            bailout(21)
           }
           data := cmd[2]
           switch instruction {
             case "ld":
             output = append(output, load(dest, data)...)
             default:
-              output = append(output , 0xff)
+              bailout(21)
+              //output = append(output , 0xff)
           }
       }
   }
