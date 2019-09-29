@@ -2,8 +2,7 @@
 //updates its position accordingly. when the ball hits an edge, it shows up on
 //the other side. this is just a proof-of-concept since a a more realistic
 //program would define some calling convention and use functions to not repeat
-//code as much and loading the sprite data which occurs at the setup label would
-//use the .data directive instead
+//code as much
 
 .title
   demo game
@@ -25,7 +24,7 @@ main:
   call check_up
   jp main
 
-//the assembler keeps track of the address we're writing data to with pc. When labels other than start and main are encountered, their address is set to pc's value at that point. If labels are encountered before they are defined, the assembler keeps track of the name and where the label address needs to go
+//the assembler keeps track of the address we're writing data to with pc. When labels other than start and main are encountered, their address is set to pc's value at that point. If labels are encountered before they are defined, the assembler keeps track of the name and where the label address needs to go and fills them in at the end
 check_up:
   //check if up is pressed
   ld $a [0xff00]
@@ -109,6 +108,7 @@ ball_sprite_data:
 move_data:
   //get scratch registers
   push $bc
+  //use an inner loop to not have to push and pop $bc after each byte
   move_data_loop:
     //get data from source
     ld $b [hl]
