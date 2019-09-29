@@ -16,7 +16,7 @@ const regPrefix string = "$"
 const ptrPrefix string = "["
 const ptrSuffix string = "]"
 const itrSuffix string = "++"
-const itrRevSuffix string = "--"
+const revItrSuffix string = "--"
 const commentPrefix string = "//"
 const labelSuffix string = ":"
 
@@ -27,6 +27,7 @@ const (
   blank
   title
   start
+  main_section
   address
   label
   comment
@@ -40,6 +41,8 @@ var regOffsets1 = map[string]byte{"bc":0, "de":1, "hl":2, "sp":3}
 var regOffsets2 = map[string]byte{"b":0, "c":1, "d":2, "e":3, "h":4, "l":5, "a":7}
 //offset pattern used in push/pop
 var regOffsets3 = map[string]byte{"bc":0, "de":1, "hl":2, "af":3}
+//offset pattern used in arithmetic instructions with $a and 8-bit immediate data
+var regOffsets4 = map[string]byte{"add":0, "adc":1, "sub":2, "sbc":3, "and":4, "xor":5, "or":6, "cp":7}
 //can the string represent a number in hexadecimal or otherwise
 func isNum(line string) bool {
   if isHex(line) {
@@ -85,6 +88,9 @@ func isTitle(line string) bool {
 func isStartAddress(line string) bool {
   return isLabel(line) && getLabel(line) == "start"
 }
+func isMainAddress(line string) bool {
+  return isLabel(line) && getLabel(line) == "main"
+}
 func isDataDirective(line string) bool {
   return isDirective(line) && getDirective(line) == "data"
 }
@@ -103,14 +109,17 @@ func isPtr(line string) bool {
 func isItr(line string) bool {
   return strings.HasSuffix(line, itrSuffix)
 }
-func isItrRev(line string) bool {
-  return strings.HasSuffix(line, itrRevSuffix)
+func isRevItr(line string) bool {
+  return strings.HasSuffix(line, revItrSuffix)
 }
 func isItrPtr(line string) bool {
   return isPtr(line) && isItr(getPtr(line))
 }
-func isItrRevPtr(line string) bool {
-  return isPtr(line) && isItrRev(getPtr(line))
+func isRevItrPtr(line string) bool {
+  return isPtr(line) && isRevItr(getPtr(line))
+}
+func isGenericItr(line string) bool {
+  return isItr(line) || isRevItr(line)
 }
 func isComment(line string) bool {
   return strings.HasPrefix(line, commentPrefix)
@@ -136,6 +145,18 @@ func getReg(line string) string {
 func getPtr(line string) string {
   return strings.TrimPrefix(strings.TrimSuffix(line, ptrSuffix), ptrPrefix)
 }
+func getItr(line string) string {
+  return strings.TrimSuffix(line, itrSuffix)
+}
+func getItrPtr(line string) string {
+  return getItr(getPtr(line))
+}
+func getRevItr(line string) string {
+  return strings.TrimSuffix(line, revItrSuffix)
+}
+func getRevItrPtr(line string) string {
+  return getRevItr(getPtr(line))
+}
 func getLabel(line string) string {
   return strings.TrimSuffix(line, labelSuffix)
 }
@@ -149,6 +170,8 @@ func getSectionType(line string, e error) section {
     return title
   } else if isStartAddress(line) {
     return start
+  } else if isMainAddress(line) {
+    return main_section
   } else if isAddress(line) {
     return address
   } else if isLabel(line) {
@@ -279,6 +302,8 @@ func bailout(code int) {
       fmt.Println("called pushPop(dest, instruction) with invalid instruction")
     case 19:
       fmt.Println("called data directive with invalid data")
+    case 20:
+      fmt.Println("load(dest, data) failed in case with iterable pointer (6-9)")
   }
   fmt.Println("bailing out")
   os.Exit(code)

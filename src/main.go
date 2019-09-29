@@ -6,9 +6,15 @@ import(
 )
 
 const startAddress uint16 = 0x0100
+const mainAddress uint16 = 0x0150
 const titleAddress uint16 = 0x0134
 const checksumAddress uint16 = 0x014D
 const numTitleChars int = 16
+const nintendoLogoAddress uint16 = 0x0104
+var nintendoLogoData []uint8 = []uint8{
+  0xce, 0xed, 0x66, 0x66, 0xcc, 0x0d, 0x00, 0x0b, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0c, 0x00, 0x0d,
+  0x00, 0x08, 0x11, 0x1f, 0x88, 0x89, 0x00, 0x0e, 0xdc, 0xcc, 0x6e, 0xe6, 0xdd, 0xdd, 0xd9, 0x99,
+  0xbb, 0xbb, 0x67, 0x63, 0x6e, 0x0e, 0xec, 0xcc, 0xdd, 0xdc, 0x99, 0x9f, 0xbb, 0xb9, 0x33, 0x3e}
 
 var pc uint16 = startAddress
 var labels map[string]uint16 = make(map[string]uint16, 0)
@@ -33,6 +39,7 @@ func main() {
   rd := bufio.NewReader(infile)
   line, err := getLine(rd)
   labels["start"] = startAddress
+  labels["main"] = mainAddress
   var stop bool = false
   var dataDirective = false
   for {
@@ -47,6 +54,11 @@ func main() {
       case start:
         //move pc to startAddress and continue
         updateAddress(startAddress, outfile)
+        dataDirective = false;
+        line, err = getLine(rd)
+      case main_section:
+        //move pc to mainAddress and continue
+        updateAddress(mainAddress, outfile)
         dataDirective = false;
         line, err = getLine(rd)
       case address:
@@ -103,6 +115,9 @@ func main() {
     outfile.Seek(int64(addr + 1), 0)
     writeCode(outfile, uint16ToSlice(assignedAddr))
   }
+  //add nintendo logo data to header
+  outfile.Seek(int64(nintendoLogoAddress),0)
+  writeCode(outfile, nintendoLogoData)
   //compute checksum and write to header
   outfile.Seek(int64(titleAddress),0)
   checksum := []byte{0}

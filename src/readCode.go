@@ -76,21 +76,21 @@ func readCode(line string) (byteCode []byte) {
         case "dec":
           output = append(output, incDec(dest, "dec"))
         case "add":
-          output = append(output, arithmetic(dest, "add"))
+          output = append(output, arithmetic(dest, "add")...)
         case "adc":
-          output = append(output, arithmetic(dest, "adc"))
+          output = append(output, arithmetic(dest, "adc")...)
         case "sub":
-          output = append(output, arithmetic(dest, "sub"))
+          output = append(output, arithmetic(dest, "sub")...)
         case "sbc":
-          output = append(output, arithmetic(dest, "sbc"))
+          output = append(output, arithmetic(dest, "sbc")...)
         case "and":
-          output = append(output, arithmetic(dest, "and"))
+          output = append(output, arithmetic(dest, "and")...)
         case "xor":
-          output = append(output, arithmetic(dest, "xor"))
+          output = append(output, arithmetic(dest, "xor")...)
         case "or":
-          output = append(output, arithmetic(dest, "or"))
+          output = append(output, arithmetic(dest, "or")...)
         case "cp":
-          output = append(output, arithmetic(dest, "cp"))
+          output = append(output, arithmetic(dest, "cp")...)
         //instruction not found, read second argument the switch case with two-argument instructions
         default:
           if len(cmd) < 2 {

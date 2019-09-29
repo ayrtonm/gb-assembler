@@ -2,18 +2,21 @@
 //updates its position accordingly. when the ball hits an edge, it shows up on
 //the other side. this is just a proof-of-concept since a a more realistic
 //program would define some calling convention and use functions to not repeat
-//code as much (ex: one function to check any button) and loading the sprite
-//data which occurs at the setup label would use the .data directive instead
+//code as much and loading the sprite data which occurs at the setup label would
+//use the .data directive instead
 
 .title
   demo game
 
+//this label is always set to 0x0100 since this is where the program counter is
+//initialized
 start:
   jp setup
 
-0x0150:
+//this label is always set to 0x0150 since this is right after the cartridge
+//header. games typically start by jumping to this point since there is very
+//little unused space between 0x0100 and where the cartridge header starts
 main:
-  call wait
   call wait
   call update_ball
   call check_right
@@ -22,77 +25,79 @@ main:
   call check_up
   jp main
 
-check_up:
-  //check if up is pressed
+check_button:
   ld $hl 0xff00
   ld [hl] 0x20
-  ld $a 0x04
   and [hl]
+  ret
+
+check_up:
+  //check if up is pressed
+  ld $a 0x04
+  call check_button
   //return if it's not pressed
   retnz
   //if it's pressed, decrement ball position
-  ld $a $d
-  sub $e
-  ld $d $a
+  dec $c
+  //if it didn't hit the top edge we're done
   retnz
-  ld $d 0x99
+  //wrap around if we hit the top edge
+  ld $c 153
   ret
 
 check_down:
   //check if down is pressed
-  ld $hl 0xff00
-  ld [hl] 0x20
   ld $a 0x08
-  and [hl]
+  call check_button
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
-  ld $a $d
-  add $e
-  ld $d $a
-  ld $h 0x99
-  sbc $h
+  inc $c
+  //check if we hit the bottom edge
+  ld $a $c
+  sbc 153
+  //if we didn't hit it, we're done
   retnz
-  ld $d 0x00
+  //wrap around if we hit the bottom edge
+  ld $c 0x00
   ret
 
 check_right:
-  ld $hl 0xff00
-  ld [hl] 0x20
+  //check if right is pressed
   ld $a 0x01
-  and [hl]
+  call check_button
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
+  inc $b
+  //check if we hit the right edge
   ld $a $b
-  add $c
-  ld $b $a
-  ld $h 0xa9
-  sbc $h
+  sbc 169
+  //if we didn't hit it, we're done
   retnz
+  //wrap around if we hit the right edge
   ld $b 0x00
   ret
 
 check_left:
-  ld $hl 0xff00
-  ld [hl] 0x20
+  //check if left is pressed
   ld $a 0x02
-  and [hl]
+  call check_button
   //return if it's not pressed
   retnz
   //if it's pressed, increment ball position
-  ld $a $b
-  sub $c
-  ld $b $a
+  dec $b
+  //if we didn't the left edge we're done
   retnz
+  //wrap around if we hit the left edge
   ld $b 0xa9
   ret
 
 update_ball:
   ld $hl 0xfe00
   //set ball's y-coordinate
-  ld [hl] $d
-  inc $hl
+  ld $a $c
+  ld [hl++] $a
   //set ball's x-coordinate
   ld [hl] $b
   ret
@@ -155,29 +160,26 @@ setup:
   ld [hl] 0x20
   
   //set 8x8 sprites
-  ld $hl 0xff40
-  ld $a [hl]
+  ld $a [0xff40]
+  //ld $hl 0xff40
+  //ld $a [hl]
   //used to clear 3rd bit of [0xff40]
   ld $b 0xfb
   and $b
   //used to set 3rd bit of [0xff40]
   //ld $b 0x04
   //or $b
-  ld [hl] $a
+  ld [0xff40] $a
   
-  //initial sprite x coordinate
-  ld $b 0x10
-  //increment x coordinate by $c if right button is not pressed
-  ld $c 0x01
-  //initial sprite y coordinate
-  ld $d 0x10
-  //increment y coordinate by $e if B button is not pressed
-  ld $e 0x01
+  //initialize sprite coordinates
+  //$b holds the x-coordinate and $c holds the y-coordinate
+  ld $bc 0x1010
   jp main
 
 wait:
-  ld $h 0xff
-  ld $l 0xff
+//dec $hl does not modify any flags... meaning we have to do decrease them
+//individually and do this silly double loop thing 
+  ld $hl 0xffff
   wait_loop_1:
     dec $h
     nop
