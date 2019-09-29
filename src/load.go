@@ -19,8 +19,23 @@ func load(dest string, data string) (output []byte) {
       destOffset,foundDest := regOffsets2[destReg]
       if dataPtr == "hl" && foundDest {
         output = append(output, 0x46 + (destOffset * 0x08))
-      } else if destReg == "a" && isNum(dataPtr) {
-        output = append(output, 0xfa, lowByte(getUint16(dataPtr)), hiByte(getUint16(dataPtr)))
+      } else if destReg == "a" {
+        var newAddress uint16
+        var found bool
+        if isNum(dataPtr) {
+          newAddress = getUint16(dataPtr)
+        } else {
+          newAddress, found = labels[dataPtr]
+          if !found {
+            unassignedLabels[pc] = dataPtr
+          }
+        }
+        /*
+          make sure to always write the amount of data the instruction expects
+          even if that means writing trash to an unassigned label
+          since len(output) is used to increment the program counter
+        */
+        output = append(output, 0xfa, lowByte(newAddress), hiByte(newAddress))
       } else {
         bailout(10)
       }
@@ -31,8 +46,23 @@ func load(dest string, data string) (output []byte) {
       dataOffset,foundData := regOffsets2[dataReg]
       if destPtr  == "hl" && foundData {
         output = append(output, 0x70 + dataOffset)
-      } else if dataReg == "a" && isNum(destPtr) {
-        output = append(output, 0xea, lowByte(getUint16(destPtr)), hiByte(getUint16(destPtr)))
+      } else if dataReg == "a" {
+        var newAddress uint16
+        var found bool
+        if isNum(destPtr) {
+          newAddress = getUint16(destPtr)
+        } else {
+          newAddress, found = labels[destPtr]
+          if !found {
+            unassignedLabels[pc] = destPtr
+          }
+        }
+        /*
+          make sure to always write the amount of data the instruction expects
+          even if that means writing trash to an unassigned label
+          since len(output) is used to increment the program counter
+        */
+        output = append(output, 0xea, lowByte(newAddress), hiByte(newAddress))
       } else {
         bailout(11)
       }
@@ -81,26 +111,32 @@ func load(dest string, data string) (output []byte) {
         bailout(20)
       }
 
-    case isReg(dest) && isNum(data):
+    case isReg(dest) && regLength(dest) == 1 && isNum(data):
       destReg := getReg(dest)
-      switch regLength(dest) {
-        case 1:
-          destOffset, foundDest := regOffsets2[destReg]
-          if foundDest {
-            output = append(output, 0x06 + (destOffset * 0x08), getUint8(data))
-          } else {
-            bailout(12)
+      destOffset, foundDest := regOffsets2[destReg]
+      if foundDest {
+        output = append(output, 0x06 + (destOffset * 0x08), getUint8(data))
+      } else {
+        bailout(12)
+      }
+
+    case isReg(dest) && regLength(dest) == 2:
+      destReg := getReg(dest)
+      destOffset, foundDest := regOffsets1[destReg]
+      if foundDest {
+        var dataAddress uint16
+        var found bool
+        if isNum(data) {
+          dataAddress = getUint16(data)
+        } else {
+          dataAddress, found = labels[data]
+          if !found {
+            unassignedLabels[pc] = data
           }
-        case 2:
-          dataAddress := getUint16(data)
-          destOffset, foundDest := regOffsets1[destReg]
-          if foundDest {
-            output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))
-          } else {
-            bailout(13)
-          }
-        default:
-          bailout(14)
+        }
+        output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))
+      } else {
+        bailout(13)
       }
 
     default:

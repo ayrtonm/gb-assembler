@@ -51,6 +51,11 @@ func jumpCall(dest string, instruction string) (output []byte) {
         unassignedLabels[pc] = dest
       }
     }
+    /*
+      make sure to always write the amount of data the instruction expects
+      even if that means writing trash to an unassigned label
+      since len(output) is used to increment the program counter
+    */
     output = append(output, lowByte(newAddress), hiByte(newAddress))
   }
   return output

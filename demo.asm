@@ -25,6 +25,7 @@ main:
   call check_up
   jp main
 
+//the assembler keeps track of the address we're writing data to with pc. When labels other than start and main are encountered, their address is set to pc's value at that point. If labels are encountered before they are defined, the assembler keeps track of the name and where the label address needs to go
 check_up:
   //check if up is pressed
   ld $a [0xff00]
@@ -96,65 +97,57 @@ update_ball:
   ld [hl] $b
   ret
 
-//$hl should point to the first destination address
-//$de should point to the first data source address
-//$a should contain the number of bytes to move
-//this should be pretty easy to implement but what I really want is a way to
-//copy an array of data located immediately after the call to move_data to a
-//given location, but this is not as easy to implement since there's no super
-//obvious way of getting the program counter after jumping to a label
-//also getting opcodes other than jump/call to use labels will be really
-//cumbersome since I still want to handle labels that are used before they are
-//defined
-move_data:
+//the 16 bytes of data for the ball sprite
+ball_sprite_data:
 .data
-  0x3c66184a
+  0x003c0000
+  0x3c4a1866
+  0x18663c42
+  0x0000003c
 
+//move $a bytes from [hl] to [de]
+move_data:
+  //get scratch registers
+  push $bc
+  move_data_loop:
+    //get data from source
+    ld $b [hl]
+    //store source address
+    push $hl
+    //put destination address in $hl
+    push $de
+    pop $hl
+    //write data to destination
+    ld [hl] $b
+    //move destination address back to $de
+    push $hl
+    pop $de
+    //move source address back to $hl
+    pop $hl
+    //increment pointers
+    inc $hl
+    inc $de
+    //decrease write counter
+    dec $a
+    jpnz move_data_loop
+    //if we've written N bytes restore scratch register and return to caller
+    pop $bc
+    ret
+
+
+//we jump here right after the game is loaded
+//there should be a better way to copy over a lot of data to some location...
 setup:
-  //load sprite tile data
-  ld $hl 0x8002
-  ld [hl] 0x3c
-  inc $hl
-  inc $hl
-  ld [hl] 0x66
-  inc $hl
-  ld [hl] 0x18
-  inc $hl
-  ld [hl] 0x4a
-  inc $hl
-  ld [hl] 0x3c
-  inc $hl
-  ld [hl] 0x42
-  inc $hl
-  ld [hl] 0x3c
-  inc $hl
-  ld [hl] 0x66
-  inc $hl
-  ld [hl] 0x18
-  inc $hl
-  ld [hl] 0x3c
-  //load sprite tile data
-  ld $hl 0x8012
-  ld [hl] 0x3c
-  inc $hl
-  inc $hl
-  ld [hl] 0x66
-  inc $hl
-  ld [hl] 0x18
-  inc $hl
-  ld [hl] 0x4a
-  inc $hl
-  ld [hl] 0x3c
-  inc $hl
-  ld [hl] 0x42
-  inc $hl
-  ld [hl] 0x3c
-  inc $hl
-  ld [hl] 0x66
-  inc $hl
-  ld [hl] 0x18
-  inc $hl
-  ld [hl] 0x3c
+  //load the address of the ball_sprite_data label into $hl
+  //this will be the source address for the call to move_data
+  ld $hl ball_sprite_data
+  //load the address of the data for the first sprite into $de
+  //this will be the destination address for the call to move_data
+  ld $de 0x8000
+  //let's copy 16 bytes
+  ld $a 16
+  //this functions uses all registers but leaves $bc and $sp the same
+  call move_data
 
   //load palette (obp0)
   ld $hl 0xff48
