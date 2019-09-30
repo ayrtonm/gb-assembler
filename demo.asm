@@ -1,9 +1,11 @@
-//this demo draws a ball on the screen, checks which buttons are pressed and
-//updates its position accordingly. when the ball hits an edge, it shows up on
-//the other side. this is just a proof-of-concept since a a more realistic
-//program would define some calling convention and use functions to not repeat
-//code as much
-
+//this demo is basically a single-player version of pong
+//for now the game is only reset when the ball hits the bottom edge
+//whenever it hits the other edges or the bar, the component of it's velocity
+//perpendicular to the edge is negated. there's also a bar_vx variable defined
+//though it's not currently used. I should fix the check_collision function
+//and make a better pseudo rng to initialize the ball before implementing
+//acceleration and friction with the bar_vx variable
+//an include directive would also be nice to avoid having these huge files
 .title
   pong
 
@@ -69,7 +71,7 @@ check_collision:
     cp $b
     retnz
     jp reset_game
-    //this is unreachable if we call setup
+    //this is unreachable if we jump to reset_game
     call negate_vy
     ret
 
