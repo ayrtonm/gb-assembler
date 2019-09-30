@@ -12,6 +12,8 @@ func readCode(line string) (byteCode []byte) {
   instruction := cmd[0]
   //handle instructions with no arguments here
   switch instruction {
+    case "cpl":
+      output = append(output, 0x2f)
     case "nop":
       output = append(output, 0x00)
     case "stop":

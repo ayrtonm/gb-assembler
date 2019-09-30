@@ -33,6 +33,9 @@ const (
   comment
   code
   data
+  variable
+  savedVariable
+  alias
 )
 //offset pattern used in inc/dec for 16 bit registers
 var regOffsets1 = map[string]byte{"bc":0, "de":1, "hl":2, "sp":3}
@@ -93,6 +96,15 @@ func isMainAddress(line string) bool {
 }
 func isDataDirective(line string) bool {
   return isDirective(line) && getDirective(line) == "data"
+}
+func isVarDirective(line string) bool {
+  return isDirective(line) && getDirective(strings.Fields(line)[0]) == "var"
+}
+func isSavedVarDirective(line string) bool {
+  return isDirective(line) && getDirective(strings.Fields(line)[0]) == "save"
+}
+func isAliasDirective(line string) bool {
+  return isDirective(line) && getDirective(strings.Fields(line)[0]) == "alias"
 }
 func isHex(line string) bool {
   return strings.HasPrefix(line, hexPrefix)
@@ -183,6 +195,12 @@ func getSectionType(line string, e error) section {
     return comment
   } else if isDataDirective(line) {
     return data
+  } else if isVarDirective(line) {
+    return variable
+  } else if isSavedVarDirective(line) {
+    return savedVariable
+  } else if isAliasDirective(line) {
+    return alias
   } else {
     return code
   }
@@ -309,6 +327,10 @@ func bailout(code int) {
       fmt.Println("load(dest, data) failed in case with iterable pointer (6-9)")
     case 21:
       fmt.Println("instruction not found")
+    case 22:
+      fmt.Println("problem assigning variables in external RAM")
+    case 23:
+      fmt.Println("problem assigning variables in work RAM")
   }
   fmt.Println("bailing out")
   os.Exit(code)
