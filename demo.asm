@@ -214,7 +214,7 @@ setup:
   ld [bar_px] $a
   ld $a 0
   ld [bar_vx] $a
-  reset_game:
+reset_game:
     ld $a 80
     ld [ball_py] $a
     ld $a 80
