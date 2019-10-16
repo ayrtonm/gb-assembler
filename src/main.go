@@ -142,7 +142,9 @@ func main() {
   }
   //fill in jump and call instructions that used labels before the labels were defined
   //addr is the location of the jump/call instruction
-  fillInUnassignedLabels(topScopeLevel, outfile)
+  for i := scopeLevel; i >= topScopeLevel; i-- {
+    fillInUnassignedLabels(i, outfile)
+  }
   //add nintendo logo data to header
   outfile.Seek(int64(nintendoLogoAddress),0)
   writeCode(outfile, nintendoLogoData)
