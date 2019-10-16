@@ -145,6 +145,10 @@ func main() {
   //fillInUnassignedLabels(topScopeLevel, outfile)
   for scopeLevel >= topScopeLevel {
     fillInUnassignedLabels(outfile)
+    if scopeLevel != topScopeLevel {
+      labelsPtr = labelsPtr[:len(labelsPtr)-1]
+      unassignedLabelsPtr = unassignedLabelsPtr[:len(unassignedLabelsPtr)-1]
+    }
     scopeLevel--
   }
   //add nintendo logo data to header

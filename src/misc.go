@@ -239,10 +239,6 @@ func fillInUnassignedLabels(outfile *os.File) {
       }
     }
   }
-  if scopeLevel != topScopeLevel {
-    labelsPtr = labelsPtr[:len(labelsPtr)-1]
-    unassignedLabelsPtr = unassignedLabelsPtr[:len(unassignedLabelsPtr)-1]
-  }
 }
 
 func getLine(rd *bufio.Reader, outfile *os.File) (line string, e error) {
@@ -263,6 +259,10 @@ func getLine(rd *bufio.Reader, outfile *os.File) (line string, e error) {
   } else if nextScopeLevel < scopeLevel {
     for nextScopeLevel < scopeLevel {
       fillInUnassignedLabels(outfile)
+      if scopeLevel != topScopeLevel {
+        labelsPtr = labelsPtr[:len(labelsPtr)-1]
+        unassignedLabelsPtr = unassignedLabelsPtr[:len(unassignedLabelsPtr)-1]
+      }
       scopeLevel--
     }
   }
