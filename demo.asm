@@ -26,30 +26,30 @@ main:
 //if I could use indentation to define some kind of "function" scope I could reuse
 //label names
 check_collision:
-  check_left_wall:
+  left:
     ld $b 8
     ld $a [ball_px]
     cp $b
-    jpnz check_right_wall
+    jpnz right
     call negate_vx
-    jp check_top_wall
-  check_right_wall:
+    jp top
+  right:
     ld $b 160
     cp $b
-    jpnz check_top_wall
+    jpnz top
     call negate_vx
-  check_top_wall:
+  top:
     ld $b 16
     ld $a [ball_py]
     cp $b
-    jpnz check_bar_collision
+    jpnz bar
     call negate_vy
     ret
   //double check this section
-  check_bar_collision:
+  bar:
     ld $b 145
     cp $b
-    jpnz check_bottom_wall
+    jpnz bottom
     ld $a [ball_px]
     ld $b $a
     ld $a [bar_px]
@@ -63,10 +63,10 @@ check_collision:
     sub $a
     l2:
     cp 12
-    jpnc check_bottom_wall
+    jpnc bottom
     call negate_vy
     ret
-  check_bottom_wall:
+  bottom:
     ld $b 152
     cp $b
     retnz
@@ -88,17 +88,17 @@ negate_vy:
   ret
 
 check_keypad:
-  check_left:
+  left:
     ld $a [keypad]
     and 0x02
-    jpnz check_right
+    jpnz right
     ld $b 16
     ld $a [bar_px]
     cp $b
-    jpz check_right
+    jpz right
     sub 1
     ld [bar_px] $a
-  check_right:
+  right:
     ld $a [keypad]
     and 0x01
     retnz
@@ -111,33 +111,33 @@ check_keypad:
     ret
 
 update_ball_position:
-  update_ball_px:
+  horizontal:
     ld $a [ball_vx]
     cp 0x80
-    jpnc move_ball_left
-    move_ball_right:
+    jpnc left
+    right:
       ld $b $a
       ld $a [ball_px]
       add $b
       ld [ball_px] $a
-      jp update_ball_py
-    move_ball_left:
+      jp vertical
+    left:
       call negate
       ld $b $a
       ld $a [ball_px]
       sub $b
       ld [ball_px] $a
-  update_ball_py:
+  vertical:
     ld $a [ball_vy]
     cp 0x80
-    jpnc move_ball_up
-    move_ball_down:
+    jpnc up
+    down:
       ld $b $a
       ld $a [ball_py]
       add $b
       ld [ball_py] $a
       ret
-    move_ball_up:
+    up:
       call negate
       ld $b $a
       ld $a [ball_py]
