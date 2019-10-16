@@ -26,6 +26,7 @@ var wram_counter uint16 = 0xc000
 var labelsPtr []map[string]uint16 = make([]map[string]uint16, 0)
 var unassignedLabelsPtr []map[uint16]string = make([]map[uint16]string, 0)
 var scopeLevel int = 0
+var indentationLevel int = 0
 
 func updateAddress(address uint16, file *os.File) {
   file.Seek(int64(address), 0)
@@ -44,7 +45,7 @@ func main() {
   defer outfile.Close()
 
   rd := bufio.NewReader(infile)
-  line, err := getLine(rd)
+  line, err := getLine(rd, outfile)
   labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
   unassignedLabelsPtr = append(unassignedLabelsPtr, make(map[uint16]string, 0))
 
@@ -56,43 +57,43 @@ func main() {
     switch getSectionType(line, err) {
       case title:
         //read next line, move pc to titleAddress and insert title
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
         updateAddress(titleAddress, outfile)
         writeCode(outfile, titleToSlice(line))
         dataDirective = false;
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case start:
         //move pc to startAddress and continue
         updateAddress(startAddress, outfile)
         dataDirective = false;
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case main_section:
         //move pc to mainAddress and continue
         updateAddress(mainAddress, outfile)
         dataDirective = false;
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case address:
         //move pc to address and continue
         updateAddress(getUint16(getLabel(line)), outfile)
         dataDirective = false;
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case label:
         //make a label at the current pc and continue
         labelsPtr[scopeLevel][getLabel(line)] = pc
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case data:
         dataDirective = true;
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case comment:
         //ignore line and continue
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case blank:
         //ignore line and continue
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case alias:
         cmd := strings.Fields(line)
         labelsPtr[scopeLevel][cmd[1]] = getUint16(cmd[2])
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case savedVariable:
         cmd := strings.Fields(line)
         labelsPtr[scopeLevel][cmd[1]] = eram_counter
@@ -103,7 +104,7 @@ func main() {
         } else {
           bailout(22)
         }
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case variable:
         cmd := strings.Fields(line)
         labelsPtr[scopeLevel][cmd[1]] = wram_counter
@@ -114,14 +115,14 @@ func main() {
         } else {
           bailout(23)
         }
-        line, err = getLine(rd)
+        line, err = getLine(rd, outfile)
       case code:
         if dataDirective {
           rawData := dataToSlice(line)
           if len(rawData) != 0 {
             writeCode(outfile, rawData)
             updateAddress(pc + uint16(len(rawData)), outfile)
-            line, err = getLine(rd)
+            line, err = getLine(rd, outfile)
           } else {
             dataDirective = false
           }
@@ -130,7 +131,7 @@ func main() {
           byteCode := readCode(line)
           writeCode(outfile, byteCode)
           updateAddress(pc + uint16(len(byteCode)), outfile)
-          line, err = getLine(rd)
+          line, err = getLine(rd, outfile)
         }
       case eof:
         stop = true
@@ -141,15 +142,7 @@ func main() {
   }
   //fill in jump and call instructions that used labels before the labels were defined
   //addr is the location of the jump/call instruction
-  for addr, labelName := range unassignedLabelsPtr[topScopeLevel] {
-    //assignedAddr is the value we want to write in
-    assignedAddr, found := labelsPtr[topScopeLevel][labelName]
-    if !found {
-      bailout(2)
-    }
-    outfile.Seek(int64(addr + 1), 0)
-    writeCode(outfile, uint16ToSlice(assignedAddr))
-  }
+  fillInUnassignedLabels(topScopeLevel, outfile)
   //add nintendo logo data to header
   outfile.Seek(int64(nintendoLogoAddress),0)
   writeCode(outfile, nintendoLogoData)

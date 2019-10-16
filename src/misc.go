@@ -206,11 +206,41 @@ func getSectionType(line string, e error) section {
   }
 }
 
-func getLine(rd *bufio.Reader) (line string, e error) {
+func fillInUnassignedLabels(level int, outfile *os.File) {
+  for addr, labelName := range unassignedLabelsPtr[level] {
+    //assignedAddr is the value we want to write in
+    assignedAddr, found := labelsPtr[level][labelName]
+    if !found {
+      bailout(2)
+    }
+    outfile.Seek(int64(addr + 1), 0)
+    writeCode(outfile, uint16ToSlice(assignedAddr))
+  }
+}
+
+//I don't like that I have to pass the output file to getLine since it's not
+//totally obvious what/why it might write to the binary
+//I think a better design would be to have it return an something signaling to
+//the main loop that we should call fillInUnassignedLabels with the current scopeLevel
+//this works for now though
+func getLine(rd *bufio.Reader, outfile *os.File) (line string, e error) {
   line, err := rd.ReadString('\n')
   line = strings.TrimSuffix(line, "\n")
+  prevIndentationLevel := indentationLevel
+  indentationLevel := 0
   for line != strings.TrimPrefix(line, " ") {
     line = strings.TrimPrefix(line, " ")
+    indentationLevel++
+  }
+  if indentationLevel > prevIndentationLevel {
+    scopeLevel++
+    labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
+    unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
+  } else if indentationLevel < prevIndentationLevel {
+    fillInUnassignedLabels(scopeLevel, outfile)
+    scopeLevel--
+    labelsPtr = labelsPtr[topScopeLevel:scopeLevel]
+    unassignedLabelsPtr = unassignedLabelsPtr[topScopeLevel:scopeLevel]
   }
   return strings.ToLower(line), err
 }
