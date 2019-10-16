@@ -15,7 +15,7 @@ start:
 main:
   call draw_ball
   call draw_bar
-  call update_ball_position
+  call move_ball
   call check_collision
   call check_keypad
   call wait
@@ -54,18 +54,18 @@ check_collision:
     ld $b $a
     ld $a [bar_px]
     cp $b
-    jpc l1
+    jpc less_than
     sub $b
-    jp l2
-    l1:
-    ld $c $a
-    ld $a $b
-    sub $a
-    l2:
-    cp 12
-    jpnc bottom
-    call negate_vy
-    ret
+    jp greater_than
+    less_than:
+      ld $c $a
+      ld $a $b
+      sub $a
+    greater_than:
+      cp 12
+      jpnc bottom
+      call negate_vy
+      ret
   bottom:
     ld $b 152
     cp $b
@@ -110,7 +110,7 @@ check_keypad:
     ld [bar_px] $a
     ret
 
-update_ball_position:
+move_ball:
   horizontal:
     ld $a [ball_vx]
     cp 0x80
