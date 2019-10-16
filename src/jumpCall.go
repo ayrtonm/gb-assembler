@@ -46,7 +46,7 @@ func jumpCall(dest string, instruction string) (output []byte) {
       newAddress = getUint16(dest)
     } else {
       //looping from inner scope to top level means that label definitions can be shadowed
-      newAddress,_ = findLabel(scopeLevel,dest)
+      newAddress = findLabel(scopeLevel,dest)
     }
     /*
       make sure to always write the amount of data the instruction expects

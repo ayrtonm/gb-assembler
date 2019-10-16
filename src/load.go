@@ -24,7 +24,7 @@ func load(dest string, data string) (output []byte) {
         if isNum(dataPtr) {
           newAddress = getUint16(dataPtr)
         } else {
-          newAddress,_ = findLabel(scopeLevel,dataPtr)
+          newAddress = findLabel(scopeLevel,dataPtr)
         }
         /*
           make sure to always write the amount of data the instruction expects
@@ -47,7 +47,7 @@ func load(dest string, data string) (output []byte) {
         if isNum(destPtr) {
           newAddress = getUint16(destPtr)
         } else {
-          newAddress,_ = findLabel(scopeLevel,destPtr)
+          newAddress = findLabel(scopeLevel,destPtr)
         }
         /*
           make sure to always write the amount of data the instruction expects
@@ -120,7 +120,7 @@ func load(dest string, data string) (output []byte) {
         if isNum(data) {
           dataAddress = getUint16(data)
         } else {
-          dataAddress,_ = findLabel(scopeLevel,data)
+          dataAddress = findLabel(scopeLevel,data)
         }
         output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))
       } else {

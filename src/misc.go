@@ -217,17 +217,19 @@ func findLabelConst(level int, label string) (newAddress uint16, found bool) {
   }
   return newAddress, true
 }
-func findLabel(level int, label string) (newAddress uint16, found bool) {
+func findLabel(level int, label string) uint16 {
+  var newAddress uint16
+  var found bool
   for i := level; i >= topScopeLevel; i-- {
     newAddress, found = labelsPtr[i][label]
     if found {
       break
     } else if i == topScopeLevel {
       unassignedLabelsPtr[level][pc] = label
-      return 0, false
+      return 0
     }
   }
-  return newAddress, true
+  return newAddress
 }
 
 func fillInUnassignedLabels(level int, outfile *os.File) {
