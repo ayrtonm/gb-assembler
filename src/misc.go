@@ -222,9 +222,8 @@ func findLabel(level int, label string) uint16 {
 }
 
 func fillInUnassignedLabels(outfile *os.File) {
-  var level int = scopeLevel
-  for addr, labelName := range unassignedLabelsPtr[level] {
-    for i := level; i >= topScopeLevel; i-- {
+  for addr, labelName := range unassignedLabelsPtr[scopeLevel] {
+    for i := scopeLevel; i >= topScopeLevel; i-- {
       assignedAddr, found := labelsPtr[i][labelName]
       if found {
         outfile.Seek(int64(addr + 1), 0)
@@ -232,46 +231,39 @@ func fillInUnassignedLabels(outfile *os.File) {
         outfile.Seek(int64(pc), 0)
         break
       } else if i == topScopeLevel {
-        if level == topScopeLevel {
+        if scopeLevel == topScopeLevel {
           bailout(2)
         } else {
-          unassignedLabelsPtr[level-1][addr] = labelName
+          unassignedLabelsPtr[scopeLevel-1][addr] = labelName
         }
       }
     }
   }
-  ////figure out the function argment thing
-  if level != topScopeLevel {
+  if scopeLevel != topScopeLevel {
     labelsPtr = labelsPtr[:len(labelsPtr)-1]
     unassignedLabelsPtr = unassignedLabelsPtr[:len(unassignedLabelsPtr)-1]
   }
 }
 
-//I don't like that I have to pass the output file to getLine since it's not
-//totally obvious what/why it might write to the binary
-//I think a better design would be to have it return an something signaling to
-//the main loop that we should call fillInUnassignedLabels with the current scopeLevel
-//this works for now though
 func getLine(rd *bufio.Reader, outfile *os.File) (line string, e error) {
   line, err := rd.ReadString('\n')
   line = strings.TrimSuffix(line, "\n")
-  prevScopeLevel := scopeLevel
   indentationLevel = 0
   for line != strings.TrimPrefix(line, " ") {
     line = strings.TrimPrefix(line, " ")
     indentationLevel++
   }
-  scopeLevel = int(indentationLevel/2)
-  if scopeLevel > prevScopeLevel {
-    for scopeLevel > prevScopeLevel {
-      prevScopeLevel++
+  nextScopeLevel := int(indentationLevel/2)
+  if nextScopeLevel > scopeLevel {
+    for nextScopeLevel > scopeLevel {
+      scopeLevel++
       labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
       unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
     }
-  } else if scopeLevel < prevScopeLevel {
-    for scopeLevel < prevScopeLevel {
-      fillInUnassignedLabels(prevScopeLevel, outfile)
-      prevScopeLevel--
+  } else if nextScopeLevel < scopeLevel {
+    for nextScopeLevel < scopeLevel {
+      fillInUnassignedLabels(outfile)
+      scopeLevel--
     }
   }
   return strings.ToLower(line), err
