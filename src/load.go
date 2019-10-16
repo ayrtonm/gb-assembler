@@ -25,9 +25,9 @@ func load(dest string, data string) (output []byte) {
         if isNum(dataPtr) {
           newAddress = getUint16(dataPtr)
         } else {
-          newAddress, found = labels[dataPtr]
+          newAddress, found = labelsPtr[0][dataPtr]
           if !found {
-            unassignedLabels[pc] = dataPtr
+            unassignedLabelsPtr[0][pc] = dataPtr
           }
         }
         /*
@@ -52,9 +52,9 @@ func load(dest string, data string) (output []byte) {
         if isNum(destPtr) {
           newAddress = getUint16(destPtr)
         } else {
-          newAddress, found = labels[destPtr]
+          newAddress, found = labelsPtr[0][destPtr]
           if !found {
-            unassignedLabels[pc] = destPtr
+            unassignedLabelsPtr[0][pc] = destPtr
           }
         }
         /*
@@ -129,9 +129,9 @@ func load(dest string, data string) (output []byte) {
         if isNum(data) {
           dataAddress = getUint16(data)
         } else {
-          dataAddress, found = labels[data]
+          dataAddress, found = labelsPtr[0][data]
           if !found {
-            unassignedLabels[pc] = data
+            unassignedLabelsPtr[0][pc] = data
           }
         }
         output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))

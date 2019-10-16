@@ -46,9 +46,9 @@ func jumpCall(dest string, instruction string) (output []byte) {
     if isNum(dest) {
       newAddress = getUint16(dest)
     } else {
-      newAddress, found = labels[dest]
+      newAddress, found = labelsPtr[0][dest]
       if !found {
-        unassignedLabels[pc] = dest
+        unassignedLabelsPtr[0][pc] = dest
       }
     }
     /*

@@ -21,8 +21,8 @@ var nintendoLogoData []uint8 = []uint8{
 var pc uint16 = mainAddress
 var eram_counter uint16 = 0xa000
 var wram_counter uint16 = 0xc000
-var labels map[string]uint16 = make(map[string]uint16, 0)
-var unassignedLabels map[uint16]string = make(map[uint16]string, 0)
+var labelsPtr []map[string]uint16 = make([]map[string]uint16, 0)
+var unassignedLabelsPtr []map[uint16]string = make([]map[uint16]string, 0)
 
 func updateAddress(address uint16, file *os.File) {
   file.Seek(int64(address), 0)
@@ -42,8 +42,10 @@ func main() {
 
   rd := bufio.NewReader(infile)
   line, err := getLine(rd)
-  labels["start"] = startAddress
-  labels["main"] = mainAddress
+  labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
+  labelsPtr[0]["start"] = startAddress
+  labelsPtr[0]["main"] = mainAddress
+  unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
   var stop bool = false
   var dataDirective = false
   for {
@@ -72,7 +74,7 @@ func main() {
         line, err = getLine(rd)
       case label:
         //make a label at the current pc and continue
-        labels[getLabel(line)] = pc
+        labelsPtr[0][getLabel(line)] = pc
         line, err = getLine(rd)
       case data:
         dataDirective = true;
@@ -85,11 +87,11 @@ func main() {
         line, err = getLine(rd)
       case alias:
         cmd := strings.Fields(line)
-        labels[cmd[1]] = getUint16(cmd[2])
+        labelsPtr[0][cmd[1]] = getUint16(cmd[2])
         line, err = getLine(rd)
       case savedVariable:
         cmd := strings.Fields(line)
-        labels[cmd[1]] = eram_counter
+        labelsPtr[0][cmd[1]] = eram_counter
         if cmd[2] == "byte" {
           eram_counter += 1
         } else if cmd[2] == "word" {
@@ -100,7 +102,7 @@ func main() {
         line, err = getLine(rd)
       case variable:
         cmd := strings.Fields(line)
-        labels[cmd[1]] = wram_counter
+        labelsPtr[0][cmd[1]] = wram_counter
         if cmd[2] == "byte" {
           wram_counter += 1
         } else if cmd[2] == "word" {
@@ -135,9 +137,9 @@ func main() {
   }
   //fill in jump and call instructions that used labels before the labels were defined
   //addr is the location of the jump/call instruction
-  for addr, labelName := range unassignedLabels {
+  for addr, labelName := range unassignedLabelsPtr[0] {
     //assignedAddr is the value we want to write in
-    assignedAddr, found := labels[labelName]
+    assignedAddr, found := labelsPtr[0][labelName]
     if !found {
       bailout(2)
     }
