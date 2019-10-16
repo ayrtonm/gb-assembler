@@ -28,29 +28,22 @@ var unassignedLabelsPtr []map[uint16]string = make([]map[uint16]string, 0)
 var scopeLevel int = topScopeLevel
 var indentationLevel int = 0
 
+var outfile *os.File
+var infileQueue []string
+
 func updateAddress(address uint16, file *os.File) {
   file.Seek(int64(address), 0)
   pc = address
 }
 
-func main() {
-  if (len(os.Args)) < 2 {
-    bailout(1)
-  }
-  infile, err := os.Open(os.Args[1])
-  check(err)
-  outfile, err := os.Create(os.Args[2])
+func parse_file(filename string) {
+  infile, err := os.Open(filename)
   check(err)
   defer infile.Close()
-  defer outfile.Close()
 
   rd := bufio.NewReader(infile)
   line, err := getLine(rd, outfile)
-  labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
-  unassignedLabelsPtr = append(unassignedLabelsPtr, make(map[uint16]string, 0))
 
-  labelsPtr[topScopeLevel]["start"] = startAddress
-  labelsPtr[topScopeLevel]["main"] = mainAddress
   var stop bool = false
   var dataDirective = false
   for {
@@ -133,6 +126,10 @@ func main() {
           updateAddress(pc + uint16(len(byteCode)), outfile)
           line, err = getLine(rd, outfile)
         }
+      case include:
+        cmd := strings.Fields(line)
+        infileQueue = append(infileQueue, cmd[1])
+        line, err = getLine(rd, outfile)
       case eof:
         stop = true
     }
@@ -140,6 +137,32 @@ func main() {
       break
     }
   }
+}
+
+func main() {
+  if (len(os.Args)) < 2 {
+    bailout(1)
+  }
+  labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
+  unassignedLabelsPtr = append(unassignedLabelsPtr, make(map[uint16]string, 0))
+
+  labelsPtr[topScopeLevel]["start"] = startAddress
+  labelsPtr[topScopeLevel]["main"] = mainAddress
+
+  var err error
+  outfile, err = os.Create(os.Args[2])
+  check(err)
+  defer outfile.Close()
+
+
+  infileQueue = append(infileQueue, os.Args[1])
+
+  for len(infileQueue) != 0 {
+    currentFile := infileQueue[0]
+    infileQueue = infileQueue[1:]
+    parse_file(currentFile)
+  }
+
   //fill in jump and call instructions that used labels before the labels were defined
   //addr is the location of the jump/call instruction
   //fillInUnassignedLabels(topScopeLevel, outfile)

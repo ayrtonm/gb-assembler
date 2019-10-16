@@ -36,6 +36,7 @@ const (
   variable
   savedVariable
   alias
+  include
 )
 //offset pattern used in inc/dec for 16 bit registers
 var regOffsets1 = map[string]byte{"bc":0, "de":1, "hl":2, "sp":3}
@@ -105,6 +106,9 @@ func isSavedVarDirective(line string) bool {
 }
 func isAliasDirective(line string) bool {
   return isDirective(line) && getDirective(strings.Fields(line)[0]) == "alias"
+}
+func isIncludeDirective(line string) bool {
+  return isDirective(line) && getDirective(strings.Fields(line)[0]) == "include"
 }
 func isHex(line string) bool {
   return strings.HasPrefix(line, hexPrefix)
@@ -201,6 +205,8 @@ func getSectionType(line string, e error) section {
     return savedVariable
   } else if isAliasDirective(line) {
     return alias
+  } else if isIncludeDirective(line) {
+    return include
   } else {
     return code
   }
