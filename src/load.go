@@ -25,9 +25,14 @@ func load(dest string, data string) (output []byte) {
         if isNum(dataPtr) {
           newAddress = getUint16(dataPtr)
         } else {
-          newAddress, found = labelsPtr[0][dataPtr]
-          if !found {
-            unassignedLabelsPtr[0][pc] = dataPtr
+          for i := scopeLevel; i >= topScopeLevel; i-- {
+            newAddress, found = labelsPtr[i][dataPtr]
+            if found {
+              break
+            }
+            if i == topScopeLevel {
+              unassignedLabelsPtr[scopeLevel][pc] = dataPtr
+            }
           }
         }
         /*
@@ -52,9 +57,14 @@ func load(dest string, data string) (output []byte) {
         if isNum(destPtr) {
           newAddress = getUint16(destPtr)
         } else {
-          newAddress, found = labelsPtr[0][destPtr]
-          if !found {
-            unassignedLabelsPtr[0][pc] = destPtr
+          for i := scopeLevel; i >= topScopeLevel; i-- {
+            newAddress, found = labelsPtr[i][destPtr]
+            if found {
+              break
+            }
+            if i == topScopeLevel {
+              unassignedLabelsPtr[scopeLevel][pc] = destPtr
+            }
           }
         }
         /*
@@ -129,9 +139,14 @@ func load(dest string, data string) (output []byte) {
         if isNum(data) {
           dataAddress = getUint16(data)
         } else {
-          dataAddress, found = labelsPtr[0][data]
-          if !found {
-            unassignedLabelsPtr[0][pc] = data
+          for i := scopeLevel; i >= topScopeLevel; i-- {
+            dataAddress, found = labelsPtr[i][data]
+            if found {
+              break
+            }
+            if i == topScopeLevel {
+              unassignedLabelsPtr[scopeLevel][pc] = data
+            }
           }
         }
         output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))

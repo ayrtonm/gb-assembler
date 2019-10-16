@@ -13,6 +13,8 @@ const ramSizeAddress uint16 = 0x0149
 const checksumAddress uint16 = 0x014D
 const numTitleChars int = 16
 const nintendoLogoAddress uint16 = 0x0104
+const topScopeLevel int = 0
+
 var nintendoLogoData []uint8 = []uint8{
   0xce, 0xed, 0x66, 0x66, 0xcc, 0x0d, 0x00, 0x0b, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0c, 0x00, 0x0d,
   0x00, 0x08, 0x11, 0x1f, 0x88, 0x89, 0x00, 0x0e, 0xdc, 0xcc, 0x6e, 0xe6, 0xdd, 0xdd, 0xd9, 0x99,
@@ -23,6 +25,7 @@ var eram_counter uint16 = 0xa000
 var wram_counter uint16 = 0xc000
 var labelsPtr []map[string]uint16 = make([]map[string]uint16, 0)
 var unassignedLabelsPtr []map[uint16]string = make([]map[uint16]string, 0)
+var scopeLevel int = 0
 
 func updateAddress(address uint16, file *os.File) {
   file.Seek(int64(address), 0)
@@ -43,9 +46,10 @@ func main() {
   rd := bufio.NewReader(infile)
   line, err := getLine(rd)
   labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
-  labelsPtr[0]["start"] = startAddress
-  labelsPtr[0]["main"] = mainAddress
-  unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
+  unassignedLabelsPtr = append(unassignedLabelsPtr, make(map[uint16]string, 0))
+
+  labelsPtr[topScopeLevel]["start"] = startAddress
+  labelsPtr[topScopeLevel]["main"] = mainAddress
   var stop bool = false
   var dataDirective = false
   for {
@@ -74,7 +78,7 @@ func main() {
         line, err = getLine(rd)
       case label:
         //make a label at the current pc and continue
-        labelsPtr[0][getLabel(line)] = pc
+        labelsPtr[scopeLevel][getLabel(line)] = pc
         line, err = getLine(rd)
       case data:
         dataDirective = true;
@@ -87,11 +91,11 @@ func main() {
         line, err = getLine(rd)
       case alias:
         cmd := strings.Fields(line)
-        labelsPtr[0][cmd[1]] = getUint16(cmd[2])
+        labelsPtr[scopeLevel][cmd[1]] = getUint16(cmd[2])
         line, err = getLine(rd)
       case savedVariable:
         cmd := strings.Fields(line)
-        labelsPtr[0][cmd[1]] = eram_counter
+        labelsPtr[scopeLevel][cmd[1]] = eram_counter
         if cmd[2] == "byte" {
           eram_counter += 1
         } else if cmd[2] == "word" {
@@ -102,7 +106,7 @@ func main() {
         line, err = getLine(rd)
       case variable:
         cmd := strings.Fields(line)
-        labelsPtr[0][cmd[1]] = wram_counter
+        labelsPtr[scopeLevel][cmd[1]] = wram_counter
         if cmd[2] == "byte" {
           wram_counter += 1
         } else if cmd[2] == "word" {
@@ -137,9 +141,9 @@ func main() {
   }
   //fill in jump and call instructions that used labels before the labels were defined
   //addr is the location of the jump/call instruction
-  for addr, labelName := range unassignedLabelsPtr[0] {
+  for addr, labelName := range unassignedLabelsPtr[topScopeLevel] {
     //assignedAddr is the value we want to write in
-    assignedAddr, found := labelsPtr[0][labelName]
+    assignedAddr, found := labelsPtr[topScopeLevel][labelName]
     if !found {
       bailout(2)
     }

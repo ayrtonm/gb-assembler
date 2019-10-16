@@ -46,9 +46,15 @@ func jumpCall(dest string, instruction string) (output []byte) {
     if isNum(dest) {
       newAddress = getUint16(dest)
     } else {
-      newAddress, found = labelsPtr[0][dest]
-      if !found {
-        unassignedLabelsPtr[0][pc] = dest
+      //looping from inner scope to top level means that label definitions can be shadowed
+      for i := scopeLevel; i >= topScopeLevel; i-- {
+        newAddress, found = labelsPtr[i][dest]
+        if found {
+          break
+        }
+        if i == topScopeLevel {
+          unassignedLabelsPtr[scopeLevel][pc] = dest
+        }
       }
     }
     /*
