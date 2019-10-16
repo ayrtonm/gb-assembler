@@ -25,7 +25,7 @@ var eram_counter uint16 = 0xa000
 var wram_counter uint16 = 0xc000
 var labelsPtr []map[string]uint16 = make([]map[string]uint16, 0)
 var unassignedLabelsPtr []map[uint16]string = make([]map[uint16]string, 0)
-var scopeLevel int = 0
+var scopeLevel int = topScopeLevel
 var indentationLevel int = 0
 
 func updateAddress(address uint16, file *os.File) {

@@ -21,19 +21,10 @@ func load(dest string, data string) (output []byte) {
         output = append(output, 0x46 + (destOffset * 0x08))
       } else if destReg == "a" {
         var newAddress uint16
-        var found bool
         if isNum(dataPtr) {
           newAddress = getUint16(dataPtr)
         } else {
-          for i := scopeLevel; i >= topScopeLevel; i-- {
-            newAddress, found = labelsPtr[i][dataPtr]
-            if found {
-              break
-            }
-            if i == topScopeLevel {
-              unassignedLabelsPtr[scopeLevel][pc] = dataPtr
-            }
-          }
+          newAddress = findLabel(scopeLevel,dataPtr)
         }
         /*
           make sure to always write the amount of data the instruction expects
@@ -53,19 +44,10 @@ func load(dest string, data string) (output []byte) {
         output = append(output, 0x70 + dataOffset)
       } else if dataReg == "a" {
         var newAddress uint16
-        var found bool
         if isNum(destPtr) {
           newAddress = getUint16(destPtr)
         } else {
-          for i := scopeLevel; i >= topScopeLevel; i-- {
-            newAddress, found = labelsPtr[i][destPtr]
-            if found {
-              break
-            }
-            if i == topScopeLevel {
-              unassignedLabelsPtr[scopeLevel][pc] = destPtr
-            }
-          }
+          newAddress = findLabel(scopeLevel,destPtr)
         }
         /*
           make sure to always write the amount of data the instruction expects
@@ -135,19 +117,10 @@ func load(dest string, data string) (output []byte) {
       destOffset, foundDest := regOffsets1[destReg]
       if foundDest {
         var dataAddress uint16
-        var found bool
         if isNum(data) {
           dataAddress = getUint16(data)
         } else {
-          for i := scopeLevel; i >= topScopeLevel; i-- {
-            dataAddress, found = labelsPtr[i][data]
-            if found {
-              break
-            }
-            if i == topScopeLevel {
-              unassignedLabelsPtr[scopeLevel][pc] = data
-            }
-          }
+          dataAddress = findLabel(scopeLevel,data)
         }
         output = append(output, 0x01 + (destOffset * 0x10), lowByte(dataAddress), hiByte(dataAddress))
       } else {

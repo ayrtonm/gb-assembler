@@ -206,15 +206,49 @@ func getSectionType(line string, e error) section {
   }
 }
 
-func fillInUnassignedLabels(level int, outfile *os.File) {
-  for addr, labelName := range unassignedLabelsPtr[level] {
-    //assignedAddr is the value we want to write in
-    assignedAddr, found := labelsPtr[level][labelName]
-    if !found {
-      bailout(2)
+func findLabel(level int, label string) uint16 {
+  var newAddress uint16
+  var found bool 
+  for i := level; i >= topScopeLevel; i-- {
+    newAddress, found = labelsPtr[i][label]
+    if found {
+      return newAddress
+    } else if i == topScopeLevel {
+      unassignedLabelsPtr[scopeLevel][pc] = label
+      return 0
     }
-    outfile.Seek(int64(addr + 1), 0)
-    writeCode(outfile, uint16ToSlice(assignedAddr))
+  }
+  return 0
+}
+
+func fillInUnassignedLabels(level int, outfile *os.File) {
+  //fmt.Println("printing unassigned labels")
+  //for i := topScopeLevel; i <= level; i++ {
+  //  fmt.Println(i,unassignedLabelsPtr[i])
+  //}
+  //fmt.Println("printing assigned labels")
+  //for i := topScopeLevel; i <= level; i++ {
+  //  fmt.Println(i,labelsPtr[i])
+  //}
+  //fmt.Println("\n")
+  for addr, labelName := range unassignedLabelsPtr[level] {
+    var assignedAddr uint16
+    var found bool
+    //assignedAddr is the value we want to write in
+    for i := level; i >= topScopeLevel; i-- {
+      assignedAddr, found = labelsPtr[i][labelName]
+      if found {
+        outfile.Seek(int64(addr + 1), 0)
+        writeCode(outfile, uint16ToSlice(assignedAddr))
+        return
+      } else if i == topScopeLevel {
+        if level == topScopeLevel {
+          bailout(2)
+        } else {
+          unassignedLabelsPtr[level-1][addr] = labelName
+        }
+      }
+    }
   }
 }
 
@@ -226,21 +260,32 @@ func fillInUnassignedLabels(level int, outfile *os.File) {
 func getLine(rd *bufio.Reader, outfile *os.File) (line string, e error) {
   line, err := rd.ReadString('\n')
   line = strings.TrimSuffix(line, "\n")
-  prevIndentationLevel := indentationLevel
-  indentationLevel := 0
-  for line != strings.TrimPrefix(line, " ") {
-    line = strings.TrimPrefix(line, " ")
-    indentationLevel++
-  }
-  if indentationLevel > prevIndentationLevel {
-    scopeLevel++
-    labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
-    unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
-  } else if indentationLevel < prevIndentationLevel {
-    fillInUnassignedLabels(scopeLevel, outfile)
-    scopeLevel--
-    labelsPtr = labelsPtr[topScopeLevel:scopeLevel]
-    unassignedLabelsPtr = unassignedLabelsPtr[topScopeLevel:scopeLevel]
+  if (len(line) > 0) {
+    prevIndentationLevel := indentationLevel
+    indentationLevel = 0
+    for line != strings.TrimPrefix(line, " ") {
+      line = strings.TrimPrefix(line, " ")
+      indentationLevel++
+    }
+    indentationLevel = int(indentationLevel/2)
+    scopeLevel = indentationLevel
+    if indentationLevel > prevIndentationLevel {
+      for prevIndentationLevel < indentationLevel {
+        prevIndentationLevel++
+        //scopeLevel++
+        labelsPtr = append(labelsPtr, make(map[string]uint16, 0))
+        unassignedLabelsPtr = append(unassignedLabelsPtr , make(map[uint16]string, 0))
+      }
+    } else if indentationLevel < prevIndentationLevel && scopeLevel != topScopeLevel {
+      for prevIndentationLevel > indentationLevel {
+        prevIndentationLevel--
+        fillInUnassignedLabels(scopeLevel, outfile)
+        //scopeLevel--
+        labelsPtr = labelsPtr[:len(labelsPtr)-1]
+        unassignedLabelsPtr = unassignedLabelsPtr[:len(unassignedLabelsPtr)-1]
+      }
+    }
+    //fmt.Println(scopeLevel,line)
   }
   return strings.ToLower(line), err
 }
