@@ -206,17 +206,6 @@ func getSectionType(line string, e error) section {
   }
 }
 
-func findLabelConst(level int, label string) (newAddress uint16, found bool) {
-  for i := level; i >= topScopeLevel; i-- {
-    newAddress, found = labelsPtr[i][label]
-    if found {
-      break
-    } else if i == topScopeLevel {
-      return 0, false
-    }
-  }
-  return newAddress, true
-}
 func findLabel(level int, label string) uint16 {
   var newAddress uint16
   var found bool
@@ -232,18 +221,22 @@ func findLabel(level int, label string) uint16 {
   return newAddress
 }
 
-func fillInUnassignedLabels(level int, outfile *os.File) {
+func fillInUnassignedLabels(outfile *os.File) {
+  var level int = scopeLevel
   for addr, labelName := range unassignedLabelsPtr[level] {
-    assignedAddr, found := findLabelConst(level, labelName)
-    if found {
-      outfile.Seek(int64(addr + 1), 0)
-      writeCode(outfile, uint16ToSlice(assignedAddr))
-      outfile.Seek(int64(pc), 0)
-    } else {
-      if level == topScopeLevel {
-        bailout(2)
-      } else {
-        unassignedLabelsPtr[level-1][addr] = labelName
+    for i := level; i >= topScopeLevel; i-- {
+      assignedAddr, found := labelsPtr[i][labelName]
+      if found {
+        outfile.Seek(int64(addr + 1), 0)
+        writeCode(outfile, uint16ToSlice(assignedAddr))
+        outfile.Seek(int64(pc), 0)
+        break
+      } else if i == topScopeLevel {
+        if level == topScopeLevel {
+          bailout(2)
+        } else {
+          unassignedLabelsPtr[level-1][addr] = labelName
+        }
       }
     }
   }
