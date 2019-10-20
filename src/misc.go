@@ -388,9 +388,7 @@ func bailout(code int) {
     case 21:
       fmt.Println("instruction not found")
     case 22:
-      fmt.Println("problem assigning variables in external RAM")
-    case 23:
-      fmt.Println("problem assigning variables in work RAM")
+      fmt.Println("problem assigning variables in RAM")
   }
   fmt.Println("bailing out")
   os.Exit(code)

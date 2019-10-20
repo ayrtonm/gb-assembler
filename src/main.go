@@ -31,6 +31,19 @@ var indentationLevel int = 0
 var outfile *os.File
 var infileQueue []string
 
+//takes a variable directive and the current RAM counter as input and returns an updated counter
+func allocateVariable(cmd []string, counter uint16) uint16 {
+  labelsPtr[topScopeLevel][cmd[1]] = counter
+  if cmd[2] == "byte" {
+    counter += 1
+  } else if cmd[2] == "word" {
+    counter += 2
+  } else {
+    bailout(22)
+  }
+  return counter
+}
+
 func updateAddress(address uint16, file *os.File) {
   file.Seek(int64(address), 0)
   pc = address
@@ -89,25 +102,11 @@ func parse_file(filename string) {
         line, err = getLine(rd, outfile)
       case savedVariable:
         cmd := strings.Fields(line)
-        labelsPtr[scopeLevel][cmd[1]] = eram_counter
-        if cmd[2] == "byte" {
-          eram_counter += 1
-        } else if cmd[2] == "word" {
-          eram_counter += 2
-        } else {
-          bailout(22)
-        }
+        eram_counter = allocateVariable(cmd, eram_counter)
         line, err = getLine(rd, outfile)
       case variable:
         cmd := strings.Fields(line)
-        labelsPtr[scopeLevel][cmd[1]] = wram_counter
-        if cmd[2] == "byte" {
-          wram_counter += 1
-        } else if cmd[2] == "word" {
-          wram_counter += 2
-        } else {
-          bailout(23)
-        }
+        wram_counter = allocateVariable(cmd, wram_counter)
         line, err = getLine(rd, outfile)
       case code:
         if dataDirective {
