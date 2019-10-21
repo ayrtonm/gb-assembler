@@ -31,6 +31,7 @@ var indentationLevel int = 0
 
 var outfile *os.File
 var opfile *os.File
+var opsUsed []uint8
 var infileQueue []string
 
 //takes a variable directive and the current RAM counter as input and returns an updated counter
@@ -125,10 +126,13 @@ func parse_file(filename string) {
           byteCode := readCode(line)
           writeCode(outfile, byteCode)
           if (len(os.Args) == 4) {
-            nn, err := opfile.WriteString(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n")
-            check(err)
-            if nn < len(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n") {
-              bailout(3)
+            if !opAlreadyWritten(byteCode[0]) {
+              opsUsed = append(opsUsed, byteCode[0])
+              nn, err := opfile.WriteString(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n")
+              check(err)
+              if nn < len(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n") {
+                bailout(3)
+              }
             }
           }
           updateAddress(pc + uint16(len(byteCode)), outfile)

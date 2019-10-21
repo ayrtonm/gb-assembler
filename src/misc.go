@@ -343,6 +343,19 @@ func stringInList(s string, list []string) bool {
   return false
 }
 
+func byteInList(b uint8, list []uint8) bool {
+  for _,test := range list {
+    if b == test {
+      return true
+    }
+  }
+  return false
+}
+
+func opAlreadyWritten(b uint8) bool {
+  return byteInList(b, opsUsed)
+}
+
 func bailout(code int) {
   switch code {
     case 1:
