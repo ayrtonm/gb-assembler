@@ -4,6 +4,7 @@ import(
   "os"
   "bufio"
   "strings"
+  "strconv"
 )
 
 const startAddress uint16 = 0x0100
@@ -29,6 +30,7 @@ var scopeLevel int = topScopeLevel
 var indentationLevel int = 0
 
 var outfile *os.File
+var opfile *os.File
 var infileQueue []string
 
 //takes a variable directive and the current RAM counter as input and returns an updated counter
@@ -122,6 +124,13 @@ func parse_file(filename string) {
           //insert instruction at current pc and continue
           byteCode := readCode(line)
           writeCode(outfile, byteCode)
+          if (len(os.Args) == 4) {
+            nn, err := opfile.WriteString(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n")
+            check(err)
+            if nn < len(strconv.FormatInt(int64(byteCode[0]),16)+" - "+line+"\n") {
+              bailout(3)
+            }
+          }
           updateAddress(pc + uint16(len(byteCode)), outfile)
           line, err = getLine(rd, outfile)
         }
@@ -152,6 +161,12 @@ func main() {
   outfile, err = os.Create(os.Args[2])
   check(err)
   defer outfile.Close()
+
+  if (len(os.Args) == 4) {
+    opfile, err = os.Create(os.Args[3])
+    check(err)
+    defer opfile.Close()
+  }
 
 
   infileQueue = append(infileQueue, os.Args[1])

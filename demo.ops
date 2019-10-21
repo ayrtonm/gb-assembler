@@ -1,0 +1,200 @@
+c3 - jp setup
+cd - call draw_ball
+cd - call draw_bar
+cd - call move_ball
+cd - call check_collision
+cd - call check_keypad
+cd - call wait
+c3 - jp main
+6 - ld $b 8
+fa - ld $a [ball_px]
+b8 - cp $b
+c2 - jpnz right
+cd - call negate_vx
+c3 - jp top
+6 - ld $b 160
+b8 - cp $b
+c2 - jpnz top
+cd - call negate_vx
+6 - ld $b 16
+fa - ld $a [ball_py]
+b8 - cp $b
+c2 - jpnz bar
+cd - call negate_vy
+c9 - ret
+6 - ld $b 145
+b8 - cp $b
+c2 - jpnz bottom
+fa - ld $a [ball_px]
+47 - ld $b $a
+fa - ld $a [bar_px]
+b8 - cp $b
+da - jpc less_than
+90 - sub $b
+c3 - jp greater_than
+4f - ld $c $a
+78 - ld $a $b
+97 - sub $a
+fe - cp 12
+d2 - jpnc bottom
+cd - call negate_vy
+c9 - ret
+6 - ld $b 152
+b8 - cp $b
+c0 - retnz
+c3 - jp reset_game
+cd - call negate_vy
+c9 - ret
+fa - ld $a [ball_vx]
+cd - call negate
+ea - ld [ball_vx] $a
+c9 - ret
+fa - ld $a [ball_vy]
+cd - call negate
+ea - ld [ball_vy] $a
+c9 - ret
+fa - ld $a [keypad]
+e6 - and 0x02
+c2 - jpnz right
+6 - ld $b 16
+fa - ld $a [bar_px]
+b8 - cp $b
+ca - jpz right
+d6 - sub 1
+ea - ld [bar_px] $a
+fa - ld $a [keypad]
+e6 - and 0x01
+c0 - retnz
+6 - ld $b 152
+fa - ld $a [bar_px]
+b8 - cp $b
+c8 - retz
+c6 - add 1
+ea - ld [bar_px] $a
+c9 - ret
+fa - ld $a [ball_vx]
+fe - cp 0x80
+d2 - jpnc left
+47 - ld $b $a
+fa - ld $a [ball_px]
+80 - add $b
+ea - ld [ball_px] $a
+c3 - jp vertical
+cd - call negate
+47 - ld $b $a
+fa - ld $a [ball_px]
+90 - sub $b
+ea - ld [ball_px] $a
+fa - ld $a [ball_vy]
+fe - cp 0x80
+d2 - jpnc up
+47 - ld $b $a
+fa - ld $a [ball_py]
+80 - add $b
+ea - ld [ball_py] $a
+c9 - ret
+cd - call negate
+47 - ld $b $a
+fa - ld $a [ball_py]
+90 - sub $b
+ea - ld [ball_py] $a
+c9 - ret
+21 - ld $hl ball_py
+11 - ld $de ball_y
+6 - ld $b 2
+cd - call move_data
+c9 - ret
+fa - ld $a [bar_px]
+ea - ld [bar_x] $a
+fa - ld $a [bar_px]
+c6 - add 8
+ea - ld [bar_x2] $a
+fa - ld $a [bar_px]
+d6 - sub 8
+ea - ld [bar_x3] $a
+c9 - ret
+21 - ld $hl ball_tile_data
+11 - ld $de vram
+6 - ld $b 16
+cd - call move_data
+21 - ld $hl bar_tile_data
+11 - ld $de vram
+7b - ld $a $e
+c6 - add 16
+5f - ld $e $a
+6 - ld $b 16
+cd - call move_data
+3e - ld $a 0x1b
+ea - ld [palette] $a
+3e - ld $a 0x82
+ea - ld [lcdcontrol] $a
+3e - ld $a 0x20
+ea - ld [keypad] $a
+3e - ld $a 152
+ea - ld [bar_y] $a
+3e - ld $a 152
+ea - ld [bar_y2] $a
+3e - ld $a 152
+ea - ld [bar_y3] $a
+3e - ld $a 1
+ea - ld [bar_tile] $a
+3e - ld $a 1
+ea - ld [bar_tile2] $a
+3e - ld $a 1
+ea - ld [bar_tile3] $a
+3e - ld $a 0x00
+ea - ld [bar_attr] $a
+3e - ld $a 0x20
+ea - ld [bar_attr2] $a
+3e - ld $a 0x20
+ea - ld [bar_attr3] $a
+3e - ld $a 80
+ea - ld [bar_px] $a
+3e - ld $a 0
+ea - ld [bar_vx] $a
+3e - ld $a 80
+ea - ld [ball_py] $a
+3e - ld $a 80
+ea - ld [ball_px] $a
+cd - call random
+ea - ld [ball_vy] $a
+cd - call random
+ea - ld [ball_vx] $a
+c3 - jp main
+2a - ld $a [hl++]
+e5 - push $hl
+d5 - push $de
+e1 - pop $hl
+22 - ld [hl++] $a
+e5 - push $hl
+d1 - pop $de
+e1 - pop $hl
+5 - dec $b
+c2 - jpnz move_data
+c9 - ret
+e5 - push $hl
+d5 - push $de
+56 - ld $d [hl]
+e1 - pop $hl
+72 - ld [hl] $d
+e5 - push $hl
+d1 - pop $de
+e1 - pop $hl
+c9 - ret
+e5 - push $hl
+21 - ld $hl 0x10ff
+2d - dec $l
+20 - jrnz -3
+25 - dec $h
+2e - ld $l 0xff
+20 - jrnz -8
+e1 - pop $hl
+c9 - ret
+2f - cpl
+c6 - add 1
+c9 - ret
+fa - ld $a [lcdstatus]
+e6 - and 0x03
+d6 - sub 1
+ca - jpz random
+c9 - ret
