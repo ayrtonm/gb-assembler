@@ -60,9 +60,9 @@ func parseFile(filename string) {
   rd := bufio.NewReader(infile)
   line, err := getLine(rd, outfile)
 
-  var stop bool = false
   for {
-    switch getSectionType(line, err) {
+    lineType := getSectionType(line, err)
+    switch lineType {
       case title:
         //read next line, move to titleAddress, insert title then jump back to pc
         line, err = getLine(rd, outfile)
@@ -139,10 +139,9 @@ func parseFile(filename string) {
         cmd := strings.Fields(line)
         infileQueue = append(infileQueue, cmd[1])
         line, err = getLine(rd, outfile)
-      case eof:
-        stop = true
     }
-    if stop {
+    //EOF should be handled outside the switch so we can break out of the for loop
+    if lineType == eof {
       break
     }
   }
