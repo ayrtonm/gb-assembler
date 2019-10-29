@@ -256,7 +256,6 @@ reset_game:
 .alias bar_tile3 0xfe0e
 .alias bar_attr3 0xfe0f
 
-.data
 ball_tile_data:
   0x003c0000
   0x3c4a1866

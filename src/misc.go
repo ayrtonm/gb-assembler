@@ -32,7 +32,6 @@ const (
   label
   comment
   code
-  data
   variable
   savedVariable
   alias
@@ -94,9 +93,6 @@ func isStartAddress(line string) bool {
 }
 func isMainAddress(line string) bool {
   return isLabel(line) && getLabel(line) == "main"
-}
-func isDataDirective(line string) bool {
-  return isDirective(line) && getDirective(line) == "data"
 }
 func isVarDirective(line string) bool {
   return isDirective(line) && getDirective(strings.Fields(line)[0]) == "var"
@@ -197,8 +193,6 @@ func getSectionType(line string, e error) section {
     return label
   } else if isComment(line) {
     return comment
-  } else if isDataDirective(line) {
-    return data
   } else if isVarDirective(line) {
     return variable
   } else if isSavedVarDirective(line) {

@@ -52,7 +52,7 @@ func updateAddress(address uint16, file *os.File) {
   pc = address
 }
 
-func parse_file(filename string) {
+func parseFile(filename string) {
   infile, err := os.Open(filename)
   check(err)
   defer infile.Close()
@@ -61,37 +61,31 @@ func parse_file(filename string) {
   line, err := getLine(rd, outfile)
 
   var stop bool = false
-  var dataDirective = false
   for {
     switch getSectionType(line, err) {
       case title:
-        //read next line, move pc to titleAddress and insert title
+        //read next line, move to titleAddress, insert title then jump back to pc
         line, err = getLine(rd, outfile)
+        prevLocation := pc
         updateAddress(titleAddress, outfile)
         writeCode(outfile, titleToSlice(line))
-        dataDirective = false;
+        updateAddress(prevLocation, outfile)
         line, err = getLine(rd, outfile)
       case start:
-        //move pc to startAddress and continue
+        //move pc to startAddress
         updateAddress(startAddress, outfile)
-        dataDirective = false;
         line, err = getLine(rd, outfile)
       case main_section:
-        //move pc to mainAddress and continue
+        //move pc to mainAddress
         updateAddress(mainAddress, outfile)
-        dataDirective = false;
         line, err = getLine(rd, outfile)
       case address:
-        //move pc to address and continue
+        //move pc to address
         updateAddress(getUint16(getLabel(line)), outfile)
-        dataDirective = false;
         line, err = getLine(rd, outfile)
       case label:
-        //make a label at the current pc and continue
+        //make a label at the current pc
         labelsPtr[scopeLevel][getLabel(line)] = pc
-        line, err = getLine(rd, outfile)
-      case data:
-        dataDirective = true;
         line, err = getLine(rd, outfile)
       case comment:
         //ignore line and continue
@@ -100,29 +94,31 @@ func parse_file(filename string) {
         //ignore line and continue
         line, err = getLine(rd, outfile)
       case alias:
+        //make an arbitrary label
         cmd := strings.Fields(line)
         labelsPtr[scopeLevel][cmd[1]] = getUint16(cmd[2])
         line, err = getLine(rd, outfile)
       case savedVariable:
+        //make a label to external RAM
         cmd := strings.Fields(line)
         eram_counter = allocateVariable(cmd, eram_counter)
         line, err = getLine(rd, outfile)
       case variable:
+        //make a label to work RAM
         cmd := strings.Fields(line)
         wram_counter = allocateVariable(cmd, wram_counter)
         line, err = getLine(rd, outfile)
       case code:
-        if dataDirective {
+        //insert raw data
+        if isNum(line) {
+          //FIXME: dataToSlice() returns nil for non-hex numbers
+          //I need to fix the ambiguity of determining the number of bytes to write for decimal numbers
           rawData := dataToSlice(line)
-          if len(rawData) != 0 {
-            writeCode(outfile, rawData)
-            updateAddress(pc + uint16(len(rawData)), outfile)
-            line, err = getLine(rd, outfile)
-          } else {
-            dataDirective = false
-          }
+          writeCode(outfile, rawData)
+          updateAddress(pc + uint16(len(rawData)), outfile)
+          line, err = getLine(rd, outfile)
         } else {
-          //insert instruction at current pc and continue
+          //insert instruction at current pc
           byteCode := readCode(line)
           writeCode(outfile, byteCode)
           if (len(os.Args) == 4) {
@@ -139,6 +135,7 @@ func parse_file(filename string) {
           line, err = getLine(rd, outfile)
         }
       case include:
+        //add a file to the input file queue
         cmd := strings.Fields(line)
         infileQueue = append(infileQueue, cmd[1])
         line, err = getLine(rd, outfile)
@@ -178,7 +175,7 @@ func main() {
   for len(infileQueue) != 0 {
     currentFile := infileQueue[0]
     infileQueue = infileQueue[1:]
-    parse_file(currentFile)
+    parseFile(currentFile)
   }
 
   //fill in jump and call instructions that used labels before the labels were defined
