@@ -103,7 +103,7 @@ var regOffsets3 = map[string]byte{"bc":0, "de":1, "hl":2, "af":3}
 //offset pattern used in arithmetic instructions with $a and 8-bit immediate data
 var opcodeOffsets1 = map[string]byte{"add":0, "adc":1, "sub":2, "sbc":3, "and":4, "xor":5, "or":6, "cp":7}
 //offset pattern used in single argument 0xcb instruction
-var opcodeOffsets2 = map[string]byte{"rlc":0, "rrc":1, "rl":2, "rr":3, "sla":4, "sra":5, "srl":6, "swap":7}
+var opcodeOffsets2 = map[string]byte{"rlc":0, "rrc":1, "rl":2, "rr":3, "sla":4, "sra":5, "swap":6, "srl":7}
 //can the string represent a number in hexadecimal or otherwise
 func isNum(line string) bool {
   if isHex(line) {

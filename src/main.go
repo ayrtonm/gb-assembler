@@ -10,6 +10,7 @@ import(
 const startAddress uint16 = 0x0100
 const mainAddress uint16 = 0x0150
 const titleAddress uint16 = 0x0134
+const cartType uint16 = 0x0147
 const ramSizeAddress uint16 = 0x0149
 const checksumAddress uint16 = 0x014D
 const numTitleChars int = 16
@@ -191,6 +192,9 @@ func main() {
   //add nintendo logo data to header
   outfile.Seek(int64(nintendoLogoAddress),0)
   writeCode(outfile, nintendoLogoData)
+  //set cartridge type to ROM+RAM
+  outfile.Seek(int64(cartType),0)
+  writeCode(outfile, []byte{0x08})
   //set RAM size to 8 kb by default
   outfile.Seek(int64(ramSizeAddress),0)
   writeCode(outfile, []byte{0x02})
