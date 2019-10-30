@@ -83,6 +83,8 @@ func getTwoArgOpFunc(instruction string) (fn twoArgOpFunc) {
     return setBit
   } else if instruction == "clear" {
     return clearBit
+  } else if instruction == "addw" {
+    return addWords
   } else {
     return nil
   }
@@ -468,6 +470,10 @@ func bailout(code int) {
       fmt.Println("called clearBit(dest, data) with invalid dest")
     case 30:
       fmt.Println("called clearBit(dest, data) with invalid data")
+    case 31:
+      fmt.Println("called add(dest, data) with invalid dest")
+    case 32:
+      fmt.Println("called add(dest, data) with invalid data")
   }
   fmt.Println("bailing out")
   os.Exit(code)

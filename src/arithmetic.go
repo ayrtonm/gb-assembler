@@ -45,3 +45,29 @@ func arithmetic(dest string, instruction string) (output []byte) {
   }
   return output
 }
+
+func addWords(dest string, data string) (output []byte) {
+  output = make([]byte,1)
+  if isReg(dest) {
+    destReg := getReg(dest)
+    if destReg == "hl" {
+      if isReg(data) {
+        dataReg := getReg(data)
+        offset, found := regOffsets1[dataReg]
+        if found {
+          var base byte = 0x09
+          output[0] = base + (16 * offset)
+        } else {
+          bailout(32)
+        }
+      } else {
+        bailout(32)
+      }
+    } else {
+      bailout(31)
+    }
+  } else {
+    bailout(31)
+  }
+  return output
+}
