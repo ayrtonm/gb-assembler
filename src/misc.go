@@ -77,6 +77,12 @@ func getOneArgOpFunc(instruction string) (fn oneArgOpFunc) {
 func getTwoArgOpFunc(instruction string) (fn twoArgOpFunc) {
   if instruction == "ld" {
     return load
+  } else if instruction == "test" {
+    return testBit
+  } else if instruction == "set" {
+    return setBit
+  } else if instruction == "clear" {
+    return clearBit
   } else {
     return nil
   }
@@ -450,6 +456,18 @@ func bailout(code int) {
       fmt.Println("called rotateShiftSwap(dest, instruction) with invalid dest")
     case 24:
       fmt.Println("called rotateShiftSwap(dest, instruction) with invalid instruction")
+    case 25:
+      fmt.Println("called testBit(dest, data) with invalid dest")
+    case 26:
+      fmt.Println("called testBit(dest, data) with invalid data")
+    case 27:
+      fmt.Println("called setBit(dest, data) with invalid dest")
+    case 28:
+      fmt.Println("called setBit(dest, data) with invalid data")
+    case 29:
+      fmt.Println("called clearBit(dest, data) with invalid dest")
+    case 30:
+      fmt.Println("called clearBit(dest, data) with invalid data")
   }
   fmt.Println("bailing out")
   os.Exit(code)
