@@ -21,7 +21,7 @@ var nintendoLogoData []uint8 = []uint8{
   0x00, 0x08, 0x11, 0x1f, 0x88, 0x89, 0x00, 0x0e, 0xdc, 0xcc, 0x6e, 0xe6, 0xdd, 0xdd, 0xd9, 0x99,
   0xbb, 0xbb, 0x67, 0x63, 0x6e, 0x0e, 0xec, 0xcc, 0xdd, 0xdc, 0x99, 0x9f, 0xbb, 0xb9, 0x33, 0x3e}
 
-var pc uint16 = mainAddress
+var pc uint16
 var eram_counter uint16 = 0xa000
 var wram_counter uint16 = 0xc000
 var labelsPtr []map[string]uint16 = make([]map[string]uint16, 0)
@@ -168,9 +168,9 @@ func main() {
     defer opfile.Close()
   }
 
-
   infileQueue = append(infileQueue, os.Args[1])
 
+  updateAddress(mainAddress, outfile)
   for len(infileQueue) != 0 {
     currentFile := infileQueue[0]
     infileQueue = infileQueue[1:]

@@ -1,7 +1,8 @@
 package main
 
 //push and pop
-func pushPop(dest string, instruction string) (output byte) {
+func pushPop(dest string, instruction string) (output []byte) {
+  output = make([]byte,1)
   if isReg(dest) {
     reg := getReg(dest)
     var base byte
@@ -14,7 +15,7 @@ func pushPop(dest string, instruction string) (output byte) {
     }
     regOffset, found := regOffsets3[reg]
     if found {
-      output = base + (regOffset * 0x10)
+      output[0] = base + (regOffset * 0x10)
     } else {
       bailout(17)
     }
