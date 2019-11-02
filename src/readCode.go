@@ -5,6 +5,29 @@ import(
   "strings"
 )
 
+/*
+  the first argument in oneArgOpFuncs is the opcode argument, the second further
+  specifies the instruction (e.g. jpz vs jpnz vs jpc)
+*/
+type oneArgOpFunc func(dest string, instruction string) []byte
+//both arguments in twoArgOpFuncs are opcode arguments
+type twoArgOpFunc func(dest string, data string) []byte
+
+var jumpCalls []string = []string{
+  "jp","jpz","jpnz","jpc","jpnc",
+  "jr","jrz","jrnz","jrc","jrnc",
+  "call","callz","callnz","callc","callnc"}
+var pushPops []string = []string{
+  "push","pop"}
+var incDecs []string = []string{
+  "inc","dec"}
+var arithmetics []string = []string{
+  "add","adc","sub","sbc",
+  "and","xor","or","cp"}
+var rotateShiftSwaps []string = []string{
+  "rlc","rrc","rl","rr",
+  "sla","sra","srl","swap"}
+
 //take a line of assembly and turn it into a sequence of bytes
 func readCode(line string) (byteCode []byte) {
   output := make([]byte,0)
@@ -67,4 +90,36 @@ func readCode(line string) (byteCode []byte) {
       }
   }
   return output
+}
+
+func getOneArgOpFunc(instruction string) (fn oneArgOpFunc) {
+  if stringInList(instruction, jumpCalls) {
+    return jumpCall
+  } else if stringInList(instruction, pushPops) {
+    return pushPop
+  } else if stringInList(instruction, incDecs) {
+    return incDec
+  } else if stringInList(instruction, arithmetics) {
+    return arithmetic
+  } else if stringInList(instruction, rotateShiftSwaps) {
+    return rotateShiftSwap
+  } else {
+    return nil
+  }
+}
+
+func getTwoArgOpFunc(instruction string) (fn twoArgOpFunc) {
+  if instruction == "ld" {
+    return load
+  } else if instruction == "test" {
+    return testBit
+  } else if instruction == "set" {
+    return setBit
+  } else if instruction == "clear" {
+    return clearBit
+  } else if instruction == "addw" {
+    return addWords
+  } else {
+    return nil
+  }
 }

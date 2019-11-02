@@ -48,14 +48,37 @@ negate:
   add 1
   ret
 
-//a really shitty pseudo rng that uses the status of the lcd (vblank, hblank,...)
+//a slightly less shitty pseudo rng that uses the status of the lcd (vblank, hblank,...)
 //to get two random bits. Leaves the result in $a. Since I'm using this to initialize
 //the ball's velocity, I'm filtering out zeros and making the result signed so
-//this returns -1, 1 or 2. since this depends on the lcd's status, repeatedly calling
-//it will tend to give sequences of the same value
+//this returns -1, 1 or 2
+.var rand_seed byte
 random:
-  ld $a [lcdstatus]
+  //setup aux registers
+  push $bc
+  ld $b 0x00
+  ld $c 8
+  loop:
+    //lowest 2 bits of [lcdstatus] depend on lcd state
+    ld $a [lcdstatus]
+    and 0x03
+    rl $b
+    xor $b
+    ld $b $a
+    dec $c
+    jpnz loop
+  ld $a [rand_seed]
+  add $b
+  ld [rand_seed] $a
+  pop $bc
   and 0x03
   sub 1
   jpz random
   ret
+
+//compute $a mod $b
+mod:
+  cp $b
+  retc
+  sub $b
+  jp mod

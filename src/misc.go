@@ -38,61 +38,6 @@ const (
   include
 )
 
-//the last argument in oneArgOpFunc specifies which instruction to use e.g. jpz vs jpnz vs jpc
-type oneArgOpFunc func(string, string) []byte
-//both arguments in twoArgOpFunc are used by the instruction
-type twoArgOpFunc func(string, string) []byte
-
-var jumpCalls []string = []string{
-  "jp","jpz","jpnz","jpc","jpnc",
-  "jr","jrz","jrnz","jrc","jrnc",
-  "call","callz","callnz","callc","callnc"}
-var pushPops []string = []string{
-  "push","pop"}
-var incDecs []string = []string{
-  "inc","dec"}
-var arithmetics []string = []string{
-  "add","adc","sub","sbc",
-  "and","xor","or","cp"}
-var rotateShiftSwaps []string = []string{
-  "rlc","rrc","rl","rr",
-  "sla","sra","srl","swap"}
-
-func getOneArgOpFunc(instruction string) (fn oneArgOpFunc) {
-  if stringInList(instruction, jumpCalls) {
-    return jumpCall
-  } else if stringInList(instruction, pushPops) {
-    return pushPop
-  } else if stringInList(instruction, incDecs) {
-    return incDec
-  } else if stringInList(instruction, arithmetics) {
-    return arithmetic
-  } else if stringInList(instruction, rotateShiftSwaps) {
-    return rotateShiftSwap
-  } else {
-    return nil
-  }
-}
-
-func getTwoArgOpFunc(instruction string) (fn twoArgOpFunc) {
-  if instruction == "ld" {
-    return load
-  } else if instruction == "test" {
-    return testBit
-  } else if instruction == "set" {
-    return setBit
-  } else if instruction == "clear" {
-    return clearBit
-  } else if instruction == "addw" {
-    return addWords
-  } else {
-    return nil
-  }
-}
-
-//this should return a function
-//func opHandledBy(instruction string) opFunction {
-//}
 //offset pattern used in inc/dec for 16 bit registers
 var regOffsets1 = map[string]byte{"bc":0, "de":1, "hl":2, "sp":3}
 //offset pattern used in inc/dec for 8 bit registers
