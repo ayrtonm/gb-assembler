@@ -1,5 +1,5 @@
 # gb-assembler
-![demo](https://github.com/ayrtonm/gb-assembler/blob/master/demo.gif)
+![demo](https://github.com/ayrtonm/gb-assembler/blob/master/demo.gif)  
 This is a basic assembler written in Go for creating binaries compatible with gameboy binaries. While it is still under development, it's capable of making [games](https://github.com/ayrtonm/gb-assembler/blob/master/demo.asm) like the one shown above.
 
 ## Building
@@ -24,7 +24,7 @@ To abstract away hardware details from code, labels to 16-bit addresses can be d
 - A line with `.var` followed by a name and `byte` or `word` defines a named label to an arbitrary location in work RAM (0xC000-0xDFFF). Using `word` ensures that two bytes can be stored at that address without overlapping with other `.var` labels.
 - `.save` can be used in the same way as `.var` to define named labels to external RAM (0xA000-0xBFFF)
 
-Labels can be used as arguments to jump and call instructions (without the `:`) anywhere inside their scope where they were defined (even before they're defined). `start` and `main` are included by default as a labels to 0x0100 and 0x0150, respectively, in the top level scope. The hardware/emulator starts execution from 0x0100, but most games jump straight to 0x0150 since the binary has [header info](bgb.bircd.org/pandocs.htm#thecartridgeheader) between these locations. By using named labels and the two default labels, programs can be written independent of the code's location in the binary making them far easier to modify.
+Labels can be used as arguments to jump and call instructions (without the `:`) anywhere inside their scope where they were defined (even before they're defined). `start` and `main` are included by default as a labels to 0x0100 and 0x0150, respectively, in the top level scope. The hardware/emulator starts execution from 0x0100, but most games jump straight to 0x0150 since the binary has [header info](http://bgb.bircd.org/pandocs.htm#thecartridgeheader) between these locations. By using named labels and the two default labels, programs can be written independent of the code's location in the binary making them far easier to modify.
 
 **TODO** explain indentation-based label scopes used here and how it's implemented
 
