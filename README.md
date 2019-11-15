@@ -1,6 +1,6 @@
 # gb-assembler
 ![demo](https://github.com/ayrtonm/gb-assembler/blob/master/demo.gif)  
-This is a basic assembler written in Go for creating binaries compatible with gameboy binaries. While it is still under development, it's capable of making [games](https://github.com/ayrtonm/gb-assembler/blob/master/demo.asm) like the one shown above.
+This is a basic assembler written in Go for creating binaries compatible with gameboy emulators. While it is still under development, it's capable of making [games](https://github.com/ayrtonm/gb-assembler/blob/master/demo.asm) like the one shown above.
 
 ## Building
 Run `./compile.sh` (or equivalently `go build -o main src/*.go`).
