@@ -17,7 +17,9 @@ start:
 main:
   call draw_ball
   call draw_bar
+  call draw_opponent
   call move_ball
+  call move_opponent
   call check_collision
   call check_keypad
   call wait
@@ -41,7 +43,7 @@ check_collision:
     jpnz top
     call negate_vx
   top:
-    ld $b 16
+    ld $b 24
     ld $a [ball_py]
     cp $b
     jpnz bar
@@ -147,6 +149,11 @@ move_ball:
       ld [ball_py] $a
       ret
 
+move_opponent:
+  ld $a [ball_px]
+  ld [opponent_px] $a
+  ret
+
 draw_ball:
   ld $hl ball_py
   ld $de ball_y
@@ -165,6 +172,17 @@ draw_bar:
   ld [bar_x3] $a
   ret
 
+draw_opponent:
+  ld $a [opponent_px]
+  ld [opponent_x] $a
+  ld $a [opponent_px]
+  add 8
+  ld [opponent_x2] $a
+  ld $a [opponent_px]
+  sub 8
+  ld [opponent_x3] $a
+  ret
+
 setup:
   //load ball tile data to the first tile pattern
   ld $hl ball_tile_data
@@ -177,6 +195,15 @@ setup:
   ld $de vram
   ld $a $e
   add 16
+  ld $e $a
+  ld $b 16
+  call move_data
+
+  //load bar edge tile data to the third tile pattern
+  ld $hl bar_edge_data
+  ld $de vram
+  ld $a $e
+  add 32
   ld $e $a
   ld $b 16
   call move_data
@@ -194,26 +221,38 @@ setup:
   //initialize oam sprite table
   ld $a 152
   ld [bar_y] $a
-  ld $a 152
   ld [bar_y2] $a
-  ld $a 152
   ld [bar_y3] $a
   ld $a 1
   ld [bar_tile] $a
-  ld $a 1
+  ld $a 2
   ld [bar_tile2] $a
-  ld $a 1
   ld [bar_tile3] $a
   ld $a 0x00
   ld [bar_attr] $a
-  ld $a 0x20
   ld [bar_attr2] $a
   ld $a 0x20
   ld [bar_attr3] $a
 
+  ld $a 16
+  ld [opponent_y] $a
+  ld [opponent_y2] $a
+  ld [opponent_y3] $a
+  ld $a 1
+  ld [opponent_tile] $a
+  ld $a 2
+  ld [opponent_tile2] $a
+  ld [opponent_tile3] $a
+  ld $a 0x00
+  ld [opponent_attr] $a
+  ld [opponent_attr2] $a
+  ld $a 0x20
+  ld [opponent_attr3] $a
+
   //initialize variables in work ram
   ld $a 80
   ld [bar_px] $a
+  ld [opponent_px] $a
   ld $a 0
   ld [bar_vx] $a
 reset_game:
@@ -233,7 +272,9 @@ reset_game:
 .var ball_vy byte
 .var ball_vx byte
 .var bar_px byte
+//this is currently unused
 .var bar_vx byte
+.var opponent_px byte
 
 //these are aliases to the coordinates of sprites 1 and 2
 //functions should update the position and velocity variables shown above
@@ -256,14 +297,45 @@ reset_game:
 .alias bar_tile3 0xfe0e
 .alias bar_attr3 0xfe0f
 
+.alias opponent_y 0xfe10
+.alias opponent_x 0xfe11
+.alias opponent_tile 0xfe12
+.alias opponent_attr 0xfe13
+.alias opponent_y2 0xfe14
+.alias opponent_x2 0xfe15
+.alias opponent_tile2 0xfe16
+.alias opponent_attr2 0xfe17
+.alias opponent_y3 0xfe18
+.alias opponent_x3 0xfe19
+.alias opponent_tile3 0xfe1a
+.alias opponent_attr3 0xfe1b
+
 ball_tile_data:
-  0x003c0000
-  0x3c4a1866
-  0x18663c42
-  0x0000003c
+  0x0000
+  0x003c
+  0x1866
+  0x3c4a
+  0x3c42
+  0x1866
+  0x003c
+  0x0000
 
 bar_tile_data:
-  0xff00ff00
-  0xff00ff00
-  0xff00ff00
-  0xff00ff00
+  0x0000
+  0x00ff
+  0xff00
+  0xff00
+  0xff00
+  0xff00
+  0x00ff
+  0x0000
+
+bar_edge_data:
+  0x0000
+  0x00fc
+  0xf806
+  0xfc0a
+  0xfc02
+  0xf806
+  0x00fc
+  0x0000
