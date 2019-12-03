@@ -89,7 +89,7 @@ mod:
   sub $b
   jp mod
 
-//return true if $b < $a < $c
+//return true (set $a to 1) if $b < $a < $c
 in_range:
   cp $b
   jpc false

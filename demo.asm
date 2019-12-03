@@ -2,14 +2,7 @@
 .include util.asm
 .include points.asm
 .include setup.asm
-//this demo is basically a single-player version of pong
-//for now the game is only reset when the ball hits the bottom edge
-//whenever it hits the other edges or the bar, the component of it's velocity
-//perpendicular to the edge is negated. there's also a bar_vx variable defined
-//though it's not currently used. I should fix the check_collision function
-//and make a better pseudo rng to initialize the ball before implementing
-//acceleration and friction with the bar_vx variable
-//an include directive would also be nice to avoid having these huge files
+//this is a simple pong demo
 .title
   pong
 
@@ -27,10 +20,6 @@ main:
   call short_wait
   jp main
 
-//I should add some kind of scoping capability to the assembler
-//I often have to make sure that label names don't collide leading to long names
-//if I could use indentation to define some kind of "function" scope I could reuse
-//label names
 check_collision:
   left:
     ld $b 8
@@ -48,30 +37,36 @@ check_collision:
     retnz
     call negate_vx
   top:
-    //check the ball and bar's x coordinates
+    //check the ball and top bar's x coordinates
     ld $a [opponent_px]
     sub 12
     ld $b $a
     ld $a [opponent_px]
-    add 20
+    add 16
     ld $c $a
     ld $a [ball_px]
     call in_range
     and 1
+    //if the ball's x coordinate is not within reach of the bar
+    //check the ball's y coordinate to see if we scored a point
     jpz check_won_point
+    //otherwise check if the ball bounced off the bar
     ld $a [ball_py]
     ld $b 22
     cp $b
     jpc bounce
     jp bottom
     bounce:
+      //the ball starts moving down after bouncing off the top bar
       call negate_vy
+      //check if the ball and the bar are moving in the same direction
       ld $a [opponent_vx]
       ld $b $a
       ld $a [ball_vx]
       rlc $a
       xor $b
       and 1
+      //if they are moving in opposite directions reverse the ball's direction
       callz negate_vx
       jp bottom
     check_won_point:
@@ -80,11 +75,12 @@ check_collision:
       cp $b
       callc won_point
   bottom:
+    //check the ball and the bottom bar's x coordinates
     ld $a [bar_px]
     sub 12
     ld $b $a
     ld $a [bar_px]
-    add 20
+    add 16
     ld $c $a
     ld $a [ball_px]
     call in_range
