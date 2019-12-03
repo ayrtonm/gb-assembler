@@ -194,7 +194,7 @@ func main() {
   writeCode(outfile, nintendoLogoData)
   //set cartridge type to ROM+RAM
   outfile.Seek(int64(cartType),0)
-  writeCode(outfile, []byte{0x08})
+  writeCode(outfile, []byte{0x00})
   //set RAM size to 8 kb by default
   outfile.Seek(int64(ramSizeAddress),0)
   writeCode(outfile, []byte{0x02})
