@@ -1,5 +1,6 @@
 .include registers.asm
 .include util.asm
+.include points.asm
 //this demo is basically a single-player version of pong
 //for now the game is only reset when the ball hits the bottom edge
 //whenever it hits the other edges or the bar, the component of it's velocity
@@ -242,30 +243,32 @@ setup:
   ld [bar_y3] $a
   ld $a 1
   ld [bar_tile] $a
+  ld [opponent_tile] $a
   ld $a 2
   ld [bar_tile2] $a
   ld [bar_tile3] $a
+  ld [opponent_tile2] $a
+  ld [opponent_tile3] $a
   ld $a 0x00
   ld [bar_attr] $a
   ld [bar_attr2] $a
+  ld [opponent_attr] $a
+  ld [opponent_attr2] $a
   ld $a 0x20
   ld [bar_attr3] $a
+  ld [opponent_attr3] $a
 
   ld $a 16
   ld [opponent_y] $a
   ld [opponent_y2] $a
   ld [opponent_y3] $a
-  ld $a 1
-  ld [opponent_tile] $a
-  ld $a 2
-  ld [opponent_tile2] $a
-  ld [opponent_tile3] $a
-  ld $a 0x00
-  ld [opponent_attr] $a
-  ld [opponent_attr2] $a
-  ld $a 0x20
-  ld [opponent_attr3] $a
 
+  ld $a 0
+  ld [point1_tile] $a
+  ld [point2_tile] $a
+  ld [point3_tile] $a
+  ld [point4_tile] $a
+  ld [point5_tile] $a
   ld $a 152
   ld [point1_y] $a
   ld [point2_y] $a
@@ -279,54 +282,17 @@ setup:
   ld [opponent_px] $a
   ld $a 0
   ld [bar_vx] $a
-  ld $a 0
   ld [wins] $a
   ld [losses] $a
 reset_game:
     ld $a 80
     ld [ball_py] $a
-    ld $a 80
     ld [ball_px] $a
     call random
     ld [ball_vy] $a
     call random
     ld [ball_vx] $a
     jp main
-
-lost_point:
-  //increase losses variable
-  ld $a [losses]
-  inc $a
-  ld [losses] $a
-  //draw point on the screen
-  ld $hl point1_y
-  ld $b 160
-  ld $a [losses]
-  dec $a
-  jpz update_oam
-  //get pointer to the right place in the OAM
-  move_pointer:
-    inc $hl
-    inc $hl
-    inc $hl
-    inc $hl
-    dec $b
-    dec $b
-    dec $b
-    dec $b
-    dec $b
-    dec $b
-    dec $b
-    dec $a
-    jpnz move_pointer
-  update_oam:
-    inc $hl
-    ld $a $b
-    ld [hl] $a
-    jp reset_game
-
-won_point:
-  jp reset_game
 
 //these are aliases to variables in work RAM
 .var ball_py byte
