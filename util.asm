@@ -24,12 +24,18 @@ move_byte:
   pop $hl
   ret
 
-//dec $hl does not modify any flags... meaning we have to do decrease them
-//individually and do this silly relative jump thing
-wait:
+long_wait:
+  push $hl
+  ld $hl 0xa0ff
+  jp wait
+short_wait:
   push $hl
   //the product of the values in $h and $l determine the wait time
   ld $hl 0x10ff
+  //there's an implicit jp wait here
+//dec $hl does not modify any flags... meaning we have to do decrease them
+//individually and do this silly relative jump thing
+wait:
   //decrease $h until it's zero
   dec $l
   jrnz -3
