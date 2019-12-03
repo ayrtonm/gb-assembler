@@ -88,3 +88,16 @@ mod:
   retc
   sub $b
   jp mod
+
+//return true if $b < $a < $c
+in_range:
+  cp $b
+  jpc false
+  cp $c
+  jpnc false
+  true:
+    ld $a 1
+    ret
+  false:
+    ld $a 0
+    ret
