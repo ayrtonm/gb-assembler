@@ -51,7 +51,7 @@ check_collision:
     ret
   //double check this section
   bar:
-    ld $b 145
+    ld $b 137
     cp $b
     jpnz bottom
     ld $a [ball_px]
@@ -74,10 +74,7 @@ check_collision:
     ld $b 152
     cp $b
     retnz
-    jp reset_game
-    //this is unreachable if we jump to reset_game
-    call negate_vy
-    ret
+    jp lost_point
 
 negate_vx:
   ld $a [ball_vx]
@@ -151,8 +148,28 @@ move_ball:
 
 move_opponent:
   ld $a [ball_px]
-  ld [opponent_px] $a
-  ret
+  ld $b $a
+  ld $a [opponent_px]
+  sub $b
+  jpnc move_left
+  move_right:
+    call random
+    and 1
+    ld $b $a
+    ld $a [opponent_px]
+    inc $a
+    add $b
+    ld [opponent_px] $a
+    ret
+  move_left:
+    call random
+    and 1
+    ld $b $a
+    ld $a [opponent_px]
+    dec $a
+    sub $b
+    ld [opponent_px] $a
+    ret
 
 draw_ball:
   ld $hl ball_py
@@ -219,7 +236,7 @@ setup:
   ld [keypad] $a
 
   //initialize oam sprite table
-  ld $a 152
+  ld $a 144
   ld [bar_y] $a
   ld [bar_y2] $a
   ld [bar_y3] $a
@@ -249,12 +266,22 @@ setup:
   ld $a 0x20
   ld [opponent_attr3] $a
 
+  ld $a 152
+  ld [point1_y] $a
+  ld [point2_y] $a
+  ld [point3_y] $a
+  ld [point4_y] $a
+  ld [point5_y] $a
+
   //initialize variables in work ram
   ld $a 80
   ld [bar_px] $a
   ld [opponent_px] $a
   ld $a 0
   ld [bar_vx] $a
+  ld $a 0
+  ld [wins] $a
+  ld [losses] $a
 reset_game:
     ld $a 80
     ld [ball_py] $a
@@ -266,6 +293,41 @@ reset_game:
     ld [ball_vx] $a
     jp main
 
+lost_point:
+  //increase losses variable
+  ld $a [losses]
+  inc $a
+  ld [losses] $a
+  //draw point on the screen
+  ld $hl point1_y
+  ld $b 160
+  ld $a [losses]
+  dec $a
+  jpz update_oam
+  //get pointer to the right place in the OAM
+  move_pointer:
+    inc $hl
+    inc $hl
+    inc $hl
+    inc $hl
+    dec $b
+    dec $b
+    dec $b
+    dec $b
+    dec $b
+    dec $b
+    dec $b
+    dec $a
+    jpnz move_pointer
+  update_oam:
+    inc $hl
+    ld $a $b
+    ld [hl] $a
+    jp reset_game
+
+won_point:
+  jp reset_game
+
 //these are aliases to variables in work RAM
 .var ball_py byte
 .var ball_px byte
@@ -275,6 +337,8 @@ reset_game:
 //this is currently unused
 .var bar_vx byte
 .var opponent_px byte
+.var wins byte
+.var losses byte
 
 //these are aliases to the coordinates of sprites 1 and 2
 //functions should update the position and velocity variables shown above
@@ -309,6 +373,31 @@ reset_game:
 .alias opponent_x3 0xfe19
 .alias opponent_tile3 0xfe1a
 .alias opponent_attr3 0xfe1b
+
+.alias point1_y 0xfe1c
+.alias point1_x 0xfe1d
+.alias point1_tile 0xfe1e
+.alias point1_attr 0xfe1f
+
+.alias point2_y 0xfe20
+.alias point2_x 0xfe21
+.alias point2_tile 0xfe22
+.alias point2_attr 0xfe23
+
+.alias point3_y 0xfe24
+.alias point3_x 0xfe25
+.alias point3_tile 0xfe26
+.alias point3_attr 0xfe27
+
+.alias point4_y 0xfe28
+.alias point4_x 0xfe29
+.alias point4_tile 0xfe2a
+.alias point4_attr 0xfe2b
+
+.alias point5_y 0xfe2c
+.alias point5_x 0xfe2d
+.alias point5_tile 0xfe2e
+.alias point5_attr 0xfe2f
 
 ball_tile_data:
   0x0000
