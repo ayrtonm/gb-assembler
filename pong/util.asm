@@ -12,18 +12,6 @@ move_data:
   jpnz move_data
   ret
 
-//move 1 byte from [hl] to [de]
-move_byte:
-  push $hl
-  push $de
-  ld $d [hl]
-  pop $hl
-  ld [hl] $d
-  push $hl
-  pop $de
-  pop $hl
-  ret
-
 long_wait:
   push $hl
   ld $hl 0xa0ff
@@ -81,13 +69,6 @@ random:
   sub 1
   jpz random
   ret
-
-//compute $a mod $b
-mod:
-  cp $b
-  retc
-  sub $b
-  jp mod
 
 //return true (set $a to 1) if $b < $a < $c
 in_range:

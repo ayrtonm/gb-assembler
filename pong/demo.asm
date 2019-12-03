@@ -31,7 +31,8 @@ check_collision:
     ret
   right:
     ld $b 160
-    ld $a [ball_px]
+    //ld $a [ball_px]
+    //[ball_px] is loaded into $a
     cp $b
     jpnz top
     retnz
@@ -41,8 +42,9 @@ check_collision:
     ld $a [opponent_px]
     sub 12
     ld $b $a
-    ld $a [opponent_px]
-    add 16
+    //ld $a [opponent_px]
+    //add 16
+    add 28
     ld $c $a
     ld $a [ball_px]
     call in_range
@@ -79,8 +81,9 @@ check_collision:
     ld $a [bar_px]
     sub 12
     ld $b $a
-    ld $a [bar_px]
-    add 16
+    //ld $a [bar_px]
+    //add 16
+    add 28
     ld $c $a
     ld $a [ball_px]
     call in_range
@@ -89,6 +92,7 @@ check_collision:
     ld $a [ball_py]
     ld $b 138
     cp $b
+    ld $hl bar_vx
     jpnc bounce
     ret
     bounce:
@@ -109,15 +113,14 @@ check_collision:
       ret
 
 negate_vx:
-  ld $a [ball_vx]
-  call negate
-  ld [ball_vx] $a
-  ret
-
+  ld $hl ball_vx
+  jp negate_v
 negate_vy:
-  ld $a [ball_vy]
+  ld $hl ball_vy
+negate_v:
+  ld $a [hl]
   call negate
-  ld [ball_vy] $a
+  ld [hl] $a
   ret
 
 check_keypad:
@@ -151,36 +154,38 @@ move_ball:
   horizontal:
     ld $a [ball_vx]
     cp 0x80
+    ld $hl ball_px
     jpnc left
     right:
-      ld $b $a
-      ld $a [ball_px]
-      add $b
-      ld [ball_px] $a
+      call inc_val
       jp vertical
     left:
       call negate
-      ld $b $a
-      ld $a [ball_px]
-      sub $b
-      ld [ball_px] $a
+      call dec_val
   vertical:
     ld $a [ball_vy]
     cp 0x80
+    ld $hl ball_py
     jpnc up
     down:
-      ld $b $a
-      ld $a [ball_py]
-      add $b
-      ld [ball_py] $a
+      call inc_val
       ret
     up:
       call negate
-      ld $b $a
-      ld $a [ball_py]
-      sub $b
-      ld [ball_py] $a
+      call dec_val
       ret
+  inc_val:
+    ld $b $a
+    ld $a [hl]
+    add $b
+    ld [hl] $a
+    ret
+  dec_val:
+    ld $b $a
+    ld $a [hl]
+    sub $b
+    ld [hl] $a
+    ret
 
 move_opponent:
   ld $a [ball_px]
@@ -221,21 +226,17 @@ draw_ball:
 draw_bar:
   ld $a [bar_px]
   ld [bar_x] $a
-  ld $a [bar_px]
   add 8
   ld [bar_x2] $a
-  ld $a [bar_px]
-  sub 8
+  sub 16
   ld [bar_x3] $a
   ret
 
 draw_opponent:
   ld $a [opponent_px]
   ld [opponent_x] $a
-  ld $a [opponent_px]
   add 8
   ld [opponent_x2] $a
-  ld $a [opponent_px]
-  sub 8
+  sub 16
   ld [opponent_x3] $a
   ret

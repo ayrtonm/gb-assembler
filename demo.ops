@@ -8,7 +8,7 @@ c9 - ret
 c0 - retnz
 d6 - sub 12
 47 - ld $b $a
-c6 - add 16
+c6 - add 28
 4f - ld $c $a
 e6 - and 1
 ca - jpz check_won_point
@@ -17,9 +17,12 @@ cb - rlc $a
 a8 - xor $b
 cc - callz negate_vx
 dc - callc won_point
+21 - ld $hl bar_vx
 d2 - jpnc bounce
 d4 - callnc lost_point
-ea - ld [ball_vx] $a
+7e - ld $a [hl]
+77 - ld [hl] $a
+ea - ld [bar_px] $a
 3e - ld $a 0
 c8 - retz
 fe - cp 0x80
@@ -27,7 +30,6 @@ fe - cp 0x80
 90 - sub $b
 3c - inc $a
 3d - dec $a
-21 - ld $hl ball_py
 11 - ld $de ball_y
 2a - ld $a [hl++]
 e5 - push $hl
@@ -36,8 +38,6 @@ e1 - pop $hl
 22 - ld [hl++] $a
 d1 - pop $de
 5 - dec $b
-56 - ld $d [hl]
-72 - ld [hl] $d
 2d - dec $l
 20 - jrnz -3
 25 - dec $h
@@ -47,14 +47,14 @@ c5 - push $bc
 e - ld $c 8
 d - dec $c
 c1 - pop $bc
-d8 - retc
 b9 - cp $c
+1e - ld $e -8
+4e - ld $c [hl]
+34 - inc [hl]
 81 - add $c
 57 - ld $d $a
 7d - ld $a $l
 6f - ld $l $a
 15 - dec $d
 78 - ld $a $b
-77 - ld [hl] $a
-7b - ld $a $e
-5f - ld $e $a
+83 - add $e

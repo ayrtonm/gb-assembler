@@ -69,59 +69,57 @@
 .alias point5_tile 0xfe2e
 .alias point5_attr 0xfe2f
 
-ball_tile_data:
-  0x0000
-  0x003c
-  0x1866
-  0x3c4a
-  0x3c42
-  0x1866
-  0x003c
-  0x0000
-
-bar_tile_data:
-  0x0000
-  0x00ff
-  0xff00
-  0xff00
-  0xff00
-  0xff00
-  0x00ff
-  0x0000
-
-bar_edge_data:
-  0x0000
-  0x00fc
-  0xf806
-  0xfc0a
-  0xfc02
-  0xf806
-  0x00fc
-  0x0000
+data_section:
+  ball_tile_data:
+    0x0000
+    0x003c
+    0x1866
+    0x3c4a
+    0x3c42
+    0x1866
+    0x003c
+    0x0000
+  bar_tile_data:
+    0x0000
+    0x00ff
+    0xff00
+    0xff00
+    0xff00
+    0xff00
+    0x00ff
+    0x0000
+  bar_edge_data:
+    0x0000
+    0x00fc
+    0xf806
+    0xfc0a
+    0xfc02
+    0xf806
+    0x00fc
+    0x0000
+  initial_oam:
+    //bar
+    0x00010090
+    //bar_2
+    0x00020090
+    //bar_3
+    0x20020090
+    //opponent
+    0x00010010
+    //opponent_2
+    0x00020010
+    //opponent_3
+    0x20020010
 
 setup:
   //load ball tile data to the first tile pattern
-  ld $hl ball_tile_data
+  ld $hl data_section
   ld $de vram
-  ld $b 16
+  ld $b 48
   call move_data
-
-  //load bar tile data to the second tile pattern
-  ld $hl bar_tile_data
-  ld $de vram
-  ld $a $e
-  add 16
-  ld $e $a
-  ld $b 16
-  call move_data
-
-  //load bar edge tile data to the third tile pattern
-  ld $hl bar_edge_data
-  ld $de vram
-  ld $a $e
-  add 32
-  ld $e $a
-  ld $b 16
+  //load data into OAM table
+  ld $de bar_y
+  ld $b 24
   call move_data
 
   //load palette (obp0)
@@ -134,32 +132,6 @@ setup:
   ld $a 0x20
   ld [keypad] $a
 
-  //initialize oam sprite table
-  ld $a 144
-  ld [bar_y] $a
-  ld [bar_y2] $a
-  ld [bar_y3] $a
-  ld $a 1
-  ld [bar_tile] $a
-  ld [opponent_tile] $a
-  ld $a 2
-  ld [bar_tile2] $a
-  ld [bar_tile3] $a
-  ld [opponent_tile2] $a
-  ld [opponent_tile3] $a
-  ld $a 0x00
-  ld [bar_attr] $a
-  ld [bar_attr2] $a
-  ld [opponent_attr] $a
-  ld [opponent_attr2] $a
-  ld $a 0x20
-  ld [bar_attr3] $a
-  ld [opponent_attr3] $a
-
-  ld $a 16
-  ld [opponent_y] $a
-  ld [opponent_y2] $a
-  ld [opponent_y3] $a
 
   //this hides the points after a game over
   ld $a 0
@@ -192,5 +164,3 @@ reset_game:
     call random
     ld [ball_vx] $a
     jp main
-
-
