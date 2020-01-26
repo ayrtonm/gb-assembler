@@ -35,6 +35,20 @@ func readCode(line string) (byteCode []byte) {
   instruction := cmd[0]
   //handle instructions with no arguments here
   switch instruction {
+    case "rrca":
+      output = append(output, 0x0f)
+    case "rra":
+      output = append(output, 0x1f)
+    case "ccf":
+      output = append(output, 0x3f)
+    case "rlca":
+      output = append(output, 0x07)
+    case "rla":
+      output = append(output, 0x17)
+    case "daa":
+      output = append(output, 0x27)
+    case "scf":
+      output = append(output, 0x37)
     case "cpl":
       output = append(output, 0x2f)
     case "nop":

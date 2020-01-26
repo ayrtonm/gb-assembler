@@ -192,9 +192,9 @@ func main() {
   //add nintendo logo data to header
   outfile.Seek(int64(nintendoLogoAddress),0)
   writeCode(outfile, nintendoLogoData)
-  //set cartridge type to ROM+RAM
+  //set cartridge type to MBC1+RAM+BATTERY
   outfile.Seek(int64(cartType),0)
-  writeCode(outfile, []byte{0x00})
+  writeCode(outfile, []byte{0x03})
   //set RAM size to 8 kb by default
   outfile.Seek(int64(ramSizeAddress),0)
   writeCode(outfile, []byte{0x02})
